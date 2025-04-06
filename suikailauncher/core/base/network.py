@@ -55,7 +55,6 @@ async def network_request(url:str,method:str="GET",headers:dict|None = None,data
     global session
     if not session:
         session = aiohttp.ClientSession(loop=asyncio.get_event_loop())
-    _break = False
     # 存一下 Url
     request_url = url
     # 请求头
@@ -65,6 +64,7 @@ async def network_request(url:str,method:str="GET",headers:dict|None = None,data
     redirect_history.append(request_url)
     redirect = 0
     retried = 0
+    _internal_status = 0
     # 添加自定义请求头
     if headers:
         for key,value in headers.items():
@@ -88,6 +88,8 @@ async def network_request(url:str,method:str="GET",headers:dict|None = None,data
         time_start = t.time()
         time_end = 0
         while redirect <= max_redirect:
+            if session.closed:
+                return HttpResponse(2006)
             # 根据方法判断请求
             async with session.request(method.upper(),request_url,headers=request_headers,data=data,verify_ssl=verify_ssl,allow_redirects=False) as resp:                
                 # 尝试获取响应
@@ -98,37 +100,40 @@ async def network_request(url:str,method:str="GET",headers:dict|None = None,data
                         redirect_history.append(request_url)
                         continue
                     else:
-                        _break = True
                         if resp.status in http_err and not allow_http_err:
                             raise exceptions.WebException(f"远程服务器返回错误：{resp.status}",resp.status,resp.headers,await resp.read())
                         return HttpResponse(resp.status,resp.headers,await resp.read(),retried,time_end,redirect_history)
                 except aiohttp.ClientConnectionResetError as e:
+                    _internal_status = 2000
                     logger.error(f"[Network] 发送 HTTP 连接请求时发生错误：连接被重置\n详细详细{track.get_ex_summary(e)}")
                     logger.error(f"[Network] 远程服务器：{url}，重定向记录：{"->".join(redirect_history)}")
                 except aiohttp.ClientConnectorCertificateError as e:
+                    _internal_status = 2001
                     logger.error(f"[Network] 发送 HTTP 连接请求时发生错误：根据验证结果，目标服务器的 SSL 证书无效\n详细详细{track.get_ex_summary(e)}")
                     logger.error(f"[Network] 远程服务器：{url}，重定向记录：{"->".join(redirect_history)}")
                 except aiohttp.ClientConnectorSSLError as e:
+                    _internal_status = 2002
                     logger.error(f"[Network] 发送 HTTP 连接请求时发生错误：建立 TLS/SSL 基础连接失败\n详细详细{track.get_ex_summary(e)}")
                     logger.error(f"[Network] 远程服务器：{url}，重定向记录：{"->".join(redirect_history)}")
                 except aiohttp.ClientConnectorDNSError as e:
+                    _internal_status = 2003
                     logger.error(f"[Network] 发送 HTTP 连接请求时发生错误：未能解析此远程名称\n详细详细{track.get_ex_summary(e)}")
                     logger.error(f"[Network] 远程服务器：{url}，重定向记录：{"->".join(redirect_history)}")
                 except asyncio.TimeoutError:
+                    _internal_status = 2004
                     logger.error(f"[Network] 发送 HTTP 连接请求时发生错误：连接超时\n详细详细{track.get_ex_summary(e)}")
                     logger.error(f"[Network] 远程服务器：{url}，重定向记录：{"->".join(redirect_history)}")
                 except Exception as e:
+                    _internal_status = 2005
                     logger.error(f"[Network] 发送 HTTP 连接请求时发生错误：未知错误\n详细详细{track.get_ex_summary(e)}")
                     logger.error(f"[Network] 远程服务器：{url}，重定向记录：{"->".join(redirect_history)}")
                 finally:
                     if retried >= retry:
-                        break
-                    if not _break:
-                        retried +=1
+                        return HttpResponse(_internal_status)
                     
         # 古希腊掌管重定向的神（
         if redirect > max_redirect:
-            return HttpResponse(2001,resp.headers,await resp.read(),retried,time_end,redirect_history)
+            return HttpResponse(2007,requested=retried,usage=time_end,redirect_history=redirect_history)
     except Exception as e:
         logger.error(f"[Network] 发送 HTTP 请求时出现未知错误\n{track.get_ex_summary(e)}")
 
