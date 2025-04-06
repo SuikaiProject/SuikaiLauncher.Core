@@ -47,7 +47,7 @@ async def refresh(yggdrasil_api:str,access_token:str,user:str = "",id:str = "") 
         raise exceptions.LoginException("登录失败",user_auth_resp.decode())
     result = user_auth_resp.json()
     access_token = result.get("access_token")
-    selectedProfile = result.get("selectedProfile","")
+    selectedProfile = result.get("selectedProfile",{})
     return access_token,selectedProfile
 
 async def validate(yggdrasil_api:str,access_token:str) -> bool:

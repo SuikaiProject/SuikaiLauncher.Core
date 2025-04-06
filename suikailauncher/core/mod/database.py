@@ -12,27 +12,23 @@ async def load_mod_database():
     logger.info("[Mod] 开始初始化 Mod 数据库")
     mod_translate_mapping = {}
     
-    # 假设 get_resources("ModData") 返回读取到的文本内容，类似 VB 中 GetResources("ModData")
-    # 这里为了示例直接使用变量 mod_data_str，实际调用请根据项目环境修改。
-    mod_data_str = mod_database
-    
     # 统一换行符处理
-    lines = mod_data_str.replace("\r\n", "\n").replace("\r", "").split("\n")
+    lines = mod_database.replace("\r\n", "\n").replace("\r", "").split("\n")
     wiki_id = 0
     
     for line in lines:
         if not line:
             continue
         wiki_id += 1
-        # 每行内可能有多个条目，使用分隔符 "¨" 分割
+        # 可能有多个内容
         entries = line.split("¨")
         for entry in entries:
             if not entry:
                 continue
             fields = entry.split("|")
             mod_meta = {}
-            
-            # 依据 slug 字段进行判断处理
+
+            # 标记来源            
             if fields[0].startswith("@"):
                 mod_meta["source"] = 2
                 mod_meta["slug"] = {
@@ -58,22 +54,20 @@ async def load_mod_database():
                     "curseforge": fields[0]
                 }
             
-            mod_meta["WikiId"] = wiki_id  # 对应 VB 中 Entry.WikiId
+            mod_meta["WikiId"] = wiki_id  
 
-            # 如果存在中文名称字段
+            # 如果存在中文名称
             if len(fields) >= 2:
                 chinese_name = fields[1]
                 # 如果中文名称中包含 "*"，则进行替换处理
                 if "*" in chinese_name:
-                    # 如果存在 modrinth slug，则使用其值否则使用 curseforge slug
+                    # 决定使用 Modrinth 还是 CurseRorge 的 slug
                     slug_val = mod_meta["slug"].get("modrinth") or mod_meta["slug"].get("curseforge", "")
                     raw_name = slug_val.replace("-", " ")
-                    # 替换 "*" 为 " (RawName)"（RawName 首字母大写）
                     chinese_name = chinese_name.replace("*", f" ({raw_name.capitalize()})")
-                mod_meta["ChineseName"] = chinese_name
+                    mod_meta["ChineseName"] = chinese_name
             
-            # 用原始的 slug 字段作为 key 存入映射表，实际情况可根据需求调整 key
-            mod_translate_mapping[fields[0]] = mod_meta
+                    mod_translate_mapping[chinese_name] = mod_meta
 
     print(mod_translate_mapping)
         
