@@ -13,7 +13,7 @@ async def login_minecraft(access_token:str,uhs:str) -> str:
 
 async def check_onwership(access_token:str) -> bool:
     onwership_resp = await network.network_request("https://api.minecraftservices.com/entitlements/mcstore",headers={"Authorization":f"Beraer {access_token}"})
-    return onwership_resp.json().get("items") == []
+    return not onwership_resp.json().get("items") == []
 
 async def get_minecraft_profile(access_token:str) -> tuple[str,str]:
     profile_resp = await network.network_request("https://api.minecraftservices.com/minecraft/profile",headers={"Authorization":f"Bearer {access_token}"})
