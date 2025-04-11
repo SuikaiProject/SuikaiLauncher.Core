@@ -71,7 +71,3 @@ async def load_mod_database():
 
     print(mod_translate_mapping)
         
-
-import asyncio
-
-asyncio.run(load_mod_database())

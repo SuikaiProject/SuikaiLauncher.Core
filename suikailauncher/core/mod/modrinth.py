@@ -3,6 +3,8 @@ from suikailauncher.core.base.logger import logger
 
 modrinth_api = "https://api.modrinth.com/v2"
 
+modrinth_mirror_api = "https://mod.mcimmirror.top/modrinth/v2"
+
 # [["categories:forge"],["versions:1.17.1"],["project_type:mod"]]
 
 async def search_mod(mod_name:str,mod_loader:str = "",version:str = ""):
@@ -12,6 +14,7 @@ async def search_mod(mod_name:str,mod_loader:str = "",version:str = ""):
     if version:
         search_url += f"[\"version:{version}\"]"
     search_url += "]"
+    mirror_api = search_url.replace(modrinth_api,modrinth_mirror_api)
     search_result = await network.network_request(search_url)
 
     
@@ -21,11 +24,7 @@ async def search_mod(mod_name:str,mod_loader:str = "",version:str = ""):
         return []
     for mod in mods:
         logger.info("")
-async def get_project_meta(project_id:str):
+
+async def get_project_meta(project_id_or_slug:str):
     pass
 
-
-import asyncio
-
-print(asyncio.run(search_mod("fabric-api")))
-asyncio.run(network.close())
