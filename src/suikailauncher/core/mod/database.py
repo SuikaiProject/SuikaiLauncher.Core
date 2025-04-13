@@ -5,12 +5,12 @@ with importlib.resources.files("suikailauncher.core.resources").joinpath("ModDat
     mod_database = f.read()
     
 mod_translate_mapping = {}
-mod_translate_list = []
+mod_translate_index = {}
 
 # 会在 Core 被加载时一并加载
 async def load_mod_database():
+    global mod_translate_mapping
     logger.info("[Mod] 开始初始化 Mod 数据库")
-    mod_translate_mapping = {}
     
     # 统一换行符处理
     lines = mod_database.replace("\r\n", "\n").replace("\r", "").split("\n")
@@ -26,7 +26,7 @@ async def load_mod_database():
             if not entry:
                 continue
             fields = entry.split("|")
-            mod_meta = {}
+            mod_meta:dict[str,dict[str,str]|int|str] = {}
 
             # 标记来源            
             if fields[0].startswith("@"):
@@ -61,13 +61,20 @@ async def load_mod_database():
                 chinese_name = fields[1]
                 # 如果中文名称中包含 "*"，则进行替换处理
                 if "*" in chinese_name:
-                    # 决定使用 Modrinth 还是 CurseRorge 的 slug
+                    # 决定使用 Modrinth 还是 CurseForge 的 slug
                     slug_val = mod_meta["slug"].get("modrinth") or mod_meta["slug"].get("curseforge", "")
                     raw_name = slug_val.replace("-", " ")
-                    chinese_name = chinese_name.replace("*", f" ({raw_name.capitalize()})")
+                    chinese_name = chinese_name.replace("*", "")
+                    mod_meta["RawName"] = raw_name.capitalize()
                     mod_meta["ChineseName"] = chinese_name
             
-                    mod_translate_mapping[chinese_name] = mod_meta
-
-    print(mod_translate_mapping)
+                    mod_translate_mapping[wiki_id] = mod_meta
+                    mod_translate_index[chinese_name] = wiki_id
         
+
+async def get_mod_i18n_en(mod_name:str):
+    pending_search_keyword = []
+    for key,value in mod_translate_index.items():
+        if mod_name in key:
+            pending_search_keyword.append(mod_translate_mapping.get(value).get("RawName"))
+    return pending_search_keyword

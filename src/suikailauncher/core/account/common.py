@@ -1,6 +1,7 @@
 import jwt
-from suikailauncher.core.base import network,track
+from suikailauncher.core.base import network,track,crypto
 from suikailauncher.core.base.logger import logger
+import secrets
 
 async def verify_jwt(key:str,algorithms:list = ["RS256"],aud:str = "") -> bool:
     """验证给定的 JWT 是否来自令牌签发方
@@ -34,14 +35,14 @@ async def verify_jwt(key:str,algorithms:list = ["RS256"],aud:str = "") -> bool:
                 jwt.decode(jwt=key,key=sign_key.key,algorithms=algorithms,audience=aud,issuer=issuer)
                 logger.info("[Security] 验证令牌成功")
                 return True
-            except jwt.InvalidTokenError as e:
-                logger.error("[Security] 验证令牌失败：此令牌无效")
             except jwt.ExpiredSignatureError as e:
                 logger.error("[Security] 验证令牌失败：令牌签名已过期")
             except jwt.InvalidAudienceError as e:
                 logger.error("[Security] 验证令牌失败：令牌使用者与令牌记录值不一致")
             except jwt.InvalidIssuerError as e:
                 logger.error("[Security] 验证令牌失败：令牌签发方与令牌记录值不一致")
+            except jwt.InvalidTokenError as e:
+                logger.error("[Security] 验证令牌失败：此令牌无效")
             except Exception as e:
                 logger.error(f"[Security] 验证令牌出错：{track.get_ex_summary(e)}")
             return False
@@ -53,3 +54,9 @@ async def verify_jwt(key:str,algorithms:list = ["RS256"],aud:str = "") -> bool:
 
 async def get_jwt_data(_jwt:str,name:str):
     return jwt.decode(_jwt,verify=False)[name]
+
+async def get_code_verifier_and_challenge() -> tuple[str]:
+    code_verifier = secrets.token_urlsafe(128)
+    code_challenge_sha256 = await api.get_file_or_string_hash("sha256", code_verifier, return_raw_bytes=True)
+    code_verifier_base64_urlsafe = (await crypto.base64_encode(code_challenge_sha256))
+    return code_verifier,code_verifier_base64_urlsafe

@@ -1,5 +1,6 @@
 import json
 from suikailauncher.core.base import exceptions
+
 version = "0.0.1"
 
 
@@ -11,4 +12,3 @@ def get_json_object(content:str) ->dict:
     
 def to_json(json_data:dict) ->str:
     return json.dumps(json_data)
-

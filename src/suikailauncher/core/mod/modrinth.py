@@ -3,7 +3,7 @@ from suikailauncher.core.base.logger import logger
 
 modrinth_api = "https://api.modrinth.com/v2"
 
-modrinth_mirror_api = "https://mod.mcimmirror.top/modrinth/v2"
+modrinth_mirror_api = "https://mod.mcimirror.top/modrinth/v2"
 
 # [["categories:forge"],["versions:1.17.1"],["project_type:mod"]]
 

@@ -27,13 +27,13 @@ cipher = Cipher(
 encryptor = cipher.encryptor()
 decryptor = cipher.decryptor()
 
-async def base64_encode(value:object):
+async def base64_encode(value:str):
     string = value.encode() + (b"=" * (len(str(value)) % 4))
-    return base64.urlsafe_b64encode(string.encode()).decode()
+    return base64.urlsafe_b64encode(string.encode()).decode().replace("=","")
 
-async def base64_decode(value:object):
+async def base64_decode(value:str):
     string = value.encode() + (b"=" * (len(str(value)) % 4))
-    return base64.urlsafe_b64decode(string.encode()).decode()
+    return base64.urlsafe_b64decode(string).decode().replace("=","")
 
 async def get_ase256_encrypt(content):
     pass
