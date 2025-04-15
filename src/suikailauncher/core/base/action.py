@@ -23,6 +23,7 @@ class Task:
     def __init__(self,func):
         self.task_id = 0
         self.func = func
+        self.progress = 0.0
     async def run(self):
         error_track = ""
         try:

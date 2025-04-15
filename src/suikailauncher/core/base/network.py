@@ -1,3 +1,4 @@
+from calendar import c
 import aiohttp
 import aiohttp.client_exceptions
 from suikailauncher.core.base import track,version,get_json_object,exceptions
@@ -30,27 +31,14 @@ class HttpResponse:
         self.requested = requested
         self.usage = usage
         self.redirect = redirect_history
-    def get_response(self) -> bytes:
-        return self.data
-    def get_status(self) -> int:
-        return self.status
-    def get_headers(self) -> dict:
-        return self.headers
-    def get_description(self) -> str:
-        pass
-    def get_time(self) -> float:
-        return self.usage
-    def get_requested(self) -> int:
-        return self.requested
-    def get_redirect(self,split_str:str = " -> ",return_list:bool = False) -> str|list:
-        return split_str.join(self.redirect)
     def is_error(self) -> bool:
         return self.status in http_err or self.status in http_internal_err
     def json(self) -> dict:
         return get_json_object(self.decode("utf-8"))
     def decode(self,encoding:str = "utf-8") ->str:
         return self.data.decode(encoding)
-# 万能的网络请求方法
+
+# 网络请求
 async def network_request(url:str,method:str="GET",headers:dict|None = None,data:str|bytes|None = None,verify_ssl:bool = True,retry:int = 5,use_browser_ua:bool = False,max_redirect:int = 20,use_stream:bool = True,allow_http_err:bool = True):
     global session
     if not session:
@@ -100,6 +88,8 @@ async def network_request(url:str,method:str="GET",headers:dict|None = None,data
                         redirect_history.append(request_url)
                         continue
                     else:
+                        logger.error(f"[Network] 远程服务器返回错误：{resp.status}")
+                        logger.error(f"[Network] 详细请求信息：\n目标服务器：{url}，重定向记录：{"->".join(redirect_history)}")
                         if resp.status in http_err and not allow_http_err:
                             raise exceptions.WebException(f"远程服务器返回错误：{resp.status}",resp.status,resp.headers,await resp.read())
                         return HttpResponse(resp.status,resp.headers,await resp.read(),retried,time_end,redirect_history)
@@ -127,9 +117,9 @@ async def network_request(url:str,method:str="GET",headers:dict|None = None,data
                     _internal_status = 2005
                     logger.error(f"[Network] 发送 HTTP 连接请求时发生错误：未知错误\n详细详细{track.get_ex_summary(e)}")
                     logger.error(f"[Network] 远程服务器：{url}，重定向记录：{"->".join(redirect_history)}")
-                finally:
-                    if retried >= retry:
-                        return HttpResponse(_internal_status)
+                if retried >= retry:
+                    return HttpResponse(2006,requested=retried,usage=time_end,redirect_history=redirect_history)
+                return HttpResponse(_internal_status)
                     
         # 古希腊掌管重定向的神（
         if redirect > max_redirect:

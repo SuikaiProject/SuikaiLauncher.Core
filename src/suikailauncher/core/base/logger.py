@@ -16,7 +16,7 @@ class ColoredFormatter(logging.Formatter):
 
     def __init__(self, fmt: Optional[str] = None, datefmt: Optional[str] = None):
         super().__init__(
-            fmt or "%(asctime)s | %(name)s | %(module)s:%(lineno)d | %(levelname)s：%(message)s",
+            fmt or "%(asctime)s | %(name)s | %(module)s:%(lineno)d | [%(levelname)s] %(message)s",
             datefmt or "%Y-%m-%d %H:%M:%S"
         )
 

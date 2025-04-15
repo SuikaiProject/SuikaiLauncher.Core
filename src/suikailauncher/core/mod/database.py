@@ -1,9 +1,19 @@
 from suikailauncher.core.base.logger import logger
+from enum import Enum
 import importlib.resources
 # 读取 Mod 数据库，来自龙猫从 MC 百科爬的数据
 with importlib.resources.files("suikailauncher.core.resources").joinpath("ModData.txt").open(encoding="utf-8") as f:
     mod_database = f.read()
     
+class LoaderType(Enum):
+    Any = 0
+    Forge = 1
+    LiteLoader = 3
+    Fabric = 4
+    Quilt = 5
+    NeoForge = 6
+    OptiFine = 7
+
 mod_translate_mapping = {}
 mod_translate_index = {}
 

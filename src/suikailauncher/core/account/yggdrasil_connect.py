@@ -4,6 +4,7 @@ from suikailauncher.core.base.logger import logger
 import webbrowser
 from enum import Enum
 import secrets
+import asyncio
 
 class YggdtasilConnectLoginResult(Enum):
     LoginSuccess = 0
@@ -13,6 +14,7 @@ class YggdtasilConnectLoginResult(Enum):
     ServerError = 4
     NotClientId = 5
     LoginFailed = 6
+    ExpiredCode = 7
 
 client_id_mapping:dict[str,str] = {}
 
@@ -65,7 +67,7 @@ async def yggdrasil_get_device_code(yggdrasil_address:str,scope:str = "offline_a
         return server_resp_json
 
 async def loop_login(codepair:dict[str,str|int]):
-    logger.info("开始 Yggdrasil Connect 登录步骤 [3/3]：获取轮询登录结果")
+    logger.info("[Account] 开始 Yggdrasil Connect 登录步骤 [3/3]：获取轮询登录结果")
     device_code = codepair.get("device_code")
     interval = codepair.get("interval")
     token_authorize = codepair.get("token_endpoint")
@@ -73,7 +75,26 @@ async def loop_login(codepair:dict[str,str|int]):
     code_verifier = codepair.get("code_verifier")
     login_data = f"client_id={client_id}&device_code={device_code}&code_verifier={code_verifier}"
     while True:
-        server_auth_resp = await network.network_request(token_authorize,"POST")
+        await asyncio.sleep(interval)
+        server_auth_resp = await network.network_request(token_authorize,"POST",login_data)
+        if server_auth_resp.is_error():
+            resp_json = server_auth_resp.json()
+            match resp_json.get("error"):
+                case "authorization_pending":
+                    continue
+                case "slow_down":
+                    continue
+                case "expired_token":
+                    logger.error("[Account] Yggdrasil Connect 登录失败：设备代码已过期。")
+                    return YggdtasilConnectLoginResult.ExpiredCode
+                case "access_denied":
+                    logger.error("[Account] Yggdrasil Connect 登录失败：用户拒绝了授权请求。")
+                    return YggdtasilConnectLoginResult.AccessDenied
+                case "server_error":
+                    logger.error("[Account] Yggdrasil Connect 登录失败：目标服务器在处理请求时出现错误。")
+                    return YggdtasilConnectLoginResult.ServerError
+                case "":
+                    pass
 
 
 async def yggdrasil_authorize_with_pkce():
