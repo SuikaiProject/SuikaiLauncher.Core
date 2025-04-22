@@ -1,15 +1,17 @@
 ﻿using System.Threading;
 using System.Text;
 using System.Security;
+using System.Runtime.CompilerServices;
 
 public class Logger
 {
     private static string LogFile = $"{DateTime.Now.ToString("yyyy-MM-dd")}.log";
-    private static LogLevel Level = LogLevel.Normal;
     private readonly static object LogOutputLock = new object[1];
     private static FileStream LogStream = File.OpenWrite(LogFile);
     private readonly static List<String> LogText = new List<String>();
-    private static Thread LogThread;
+    private static Thread? LogThread;
+    
+    public static bool DebugMode = false;
 
     public enum LogLevel
     {
@@ -27,6 +29,7 @@ public class Logger
     {
         LogThread = new Thread(new ThreadStart(LogFlush));
         LogThread.Start();
+
     }
     public static void LogFlush()
     {
@@ -35,6 +38,7 @@ public class Logger
             try
             {
                 Thread.Sleep(1000);
+                if (LogText.Count() <=0) continue;
                 lock (LogOutputLock)
                 {
                     foreach (string Text in LogText)
@@ -46,7 +50,7 @@ public class Logger
                     LogText.Clear();
                 }
             }
-            catch (ThreadInterruptedException ex)
+            catch (ThreadInterruptedException)
             {
                 return;
             }
@@ -59,31 +63,12 @@ public class Logger
             }
         }
     }
-    public static void ExitLog(LogLevel Level)
+    public static void ExitLog()
     {
-        string ExitDescription = "";
-        if (Level == LogLevel.Exit || Level == LogLevel.Exception)
-        {
-            if (Level == LogLevel.Exit)
-            {
-                ExitDescription = "Finished";
-            }
-            else
-            {
-                ExitDescription = "Exception";
-            }
-        }
-        else
-        {
-            return;
-        }
-        Log($"[System]： 程序已退出，返回值：{ExitDescription}");
-        // 等一秒让结束段日志被写入    
-        Thread.Sleep(1000);
-        if (LogThread.IsAlive) LogThread.Interrupt();
+        if (LogThread is not null && LogThread.IsAlive) LogThread.Interrupt();
         if (LogStream is not null) LogStream.Dispose();
     }
-    public async static void Log(string message)
+    public static void Log(string message)
     {
         lock (LogOutputLock)
         {
@@ -92,7 +77,7 @@ public class Logger
             LogText.Add(output);
         }
     }
-    public async static void Log(Exception ex, string message)
+    public static void Log(Exception ex, string message)
     {
         lock (LogOutputLock)
         {
@@ -103,7 +88,14 @@ public class Logger
         }
     }
 
-    public static string GetExceptionDetail(Exception ex, bool showAllStacks = false)
+    public static void ChangeDebugMode(){
+        lock(LogOutputLock){
+            DebugMode = !DebugMode;
+            if(DebugMode) Log("[Logger] 已进入调试模式，这可能会导致性能下降，如无必要请勿开启！");
+        }
+    }
+
+    private static string GetExceptionDetail(Exception? ex, bool showAllStacks = false)
     {
         if (ex == null)
         {
@@ -112,7 +104,7 @@ public class Logger
 
 
         Exception innerEx = ex;
-        while (innerEx.InnerException != null)
+        while (innerEx.InnerException is not null)
         {
             innerEx = innerEx.InnerException;
         }
@@ -126,7 +118,7 @@ public class Logger
             {
                 foreach (string stack in ex.StackTrace.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
                 {
-                    if (showAllStacks || stack.Contains("pcl", StringComparison.OrdinalIgnoreCase))
+                    if (showAllStacks || stack.Contains("SuikaiLauncher", StringComparison.OrdinalIgnoreCase))
                     {
                         descList.Add(stack.Replace("\r", string.Empty).Replace("\n", string.Empty));
                     }
@@ -141,7 +133,7 @@ public class Logger
         }
 
 
-        string commonReason = null;
+        string? commonReason = null;
         if (innerEx is TypeLoadException || innerEx is BadImageFormatException || innerEx is MissingMethodException || innerEx is NotImplementedException || innerEx is TypeInitializationException)
         {
             commonReason = "当前运行环境存在问题。请尝试重新安装 .NET 6.0 然后再试。若无法安装，请先卸载当前安装的 .NET 6.0，然后再尝试安装。";
@@ -174,15 +166,5 @@ public class Logger
         }
     }
 
-    public static void Main()
-    {
-        Exception ex = new TypeLoadException("非帝子所向 毋明耀尊王");
-        Log(ex, "非帝子所向 毋明耀尊王");
-        Log("指尖划过的色彩 汗滴奏出的节拍");
-        Log("源流万世 大哉乾元");
-        Log("至少在这一刻 热爱不问为何");
-        Thread.Sleep(1000);
-        ExitLog(LogLevel.Exception);
 
-    }
 }

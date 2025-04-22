@@ -1,0 +1,3 @@
+namespace SuikaiLauncher.Core.Account{
+    
+}
