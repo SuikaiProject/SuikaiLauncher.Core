@@ -1,9 +1,7 @@
 ﻿using System.Threading.Tasks;
 using System.Threading;
 using System.Net.Http.Headers;
-using System.Xml.XPath;
-using System.Formats.Asn1;
-using System.Runtime.CompilerServices;
+
 
 namespace SuikaiLauncher.Core{
     public class Network
@@ -15,7 +13,6 @@ namespace SuikaiLauncher.Core{
         //private static readonly string BrowserUA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:137.0) Gecko/20100101 Firefox/137.0";
 
         public async static Task<HttpResponseMessage?> NetworkRequest(string? url, Dictionary<String, String>? headers = null, string? data = null, byte[]? ByteData = null, int timeout = 10000, string method = "GET", bool UseBrowserUA = false,int retry = 5) {
-        Retry:
             try {
                 int redirect = 20;
                 if (string.IsNullOrWhiteSpace(url)) return null;
@@ -51,30 +48,41 @@ namespace SuikaiLauncher.Core{
                 else UserAgent = LauncherUA;
                 client.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue(UserAgent));
                 if (client.DefaultRequestHeaders.Accept.Count() <=0) client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                Redirect:
                 HttpRequestMessage Request = new HttpRequestMessage(RequestMethod, url);
                 if (!string.IsNullOrWhiteSpace(data)) Request.Content = new StringContent(data);
                 else if (ByteData is not null && string.IsNullOrWhiteSpace(data)) Request.Content = new ByteArrayContent(ByteData);
-                HttpResponseMessage Response = await client.SendAsync(Request);
-                int status = (int)Response.StatusCode;
-                if (300 <= status && status <= 399){
-                    if (redirect <=0) {
-                        Logger.Log($"[Network] 发送 HTTP 请求失败：目标服务器重定向的次数过多\n重定向历史：{string.Join("->",redirectHistory)}");
+                while (retry <= 0 || redirect <= 0)
+                {
+                    try {
+                        HttpResponseMessage Response = await client.SendAsync(Request);
+                        int status = (int)Response.StatusCode;
+                        if (300 <= status && status <= 399)
+                        {
+                            if (redirect <= 0)
+                            {
+                                Logger.Log($"[Network] 发送 HTTP 请求失败：目标服务器重定向的次数过多\n重定向历史：{string.Join("->", redirectHistory)}");
+                            }
+                            else if (Response.Headers.Location is not null)
+                            {
+                                redirect--;
+                                url = Response.Headers.Location.ToString();
+                                continue;
+                            }
+                            throw new ArgumentNullException("无效的重定向响应");
+                        }
+                        return Response;
+                        }catch(Exception ex)
+                    {
+                        Logger.Log(ex, "[Network] 发送 HTTP 请求失败");
+                        if (retry <= 0 || ex is ArgumentNullException) throw;
+                        retry--;
                     }
-                    else if (Response.Headers.Location is not null){
-                        redirect --;
-                        url = Response.Headers.Location.ToString();
-                        goto Redirect;
                     }
-                    throw new ArgumentNullException("无效的重定向响应");
-                }
-                return Response;
             }catch(Exception ex) {
                 Logger.Log(ex, "[Network] 发送 HTTP 请求失败");
-                if (retry <= 0 || ex is ArgumentNullException) throw;
-                retry --;
-                goto Retry;
+                throw;
             }
+            return null;
         }
     }
     public class Download{
@@ -86,7 +94,13 @@ namespace SuikaiLauncher.Core{
                 if (task is null) continue;
                 DlTask[TaskCount] = Task.Run(async () => {
                     HttpResponseMessage? Result = await Network.NetworkRequest(task.GetValueOrDefault("url",null)?.ToString());
+                    if (Result is null) throw new Exception("下载时出现未知错误");
+                    using (Stream Reader = Result.Content.ReadAsStream())
+                    {
+
+                    }
                 });
+                TaskCount ++;
             }
         }
     }
