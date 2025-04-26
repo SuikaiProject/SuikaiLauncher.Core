@@ -5,7 +5,7 @@ namespace SuikaiLauncher.Core.Mod{
         private static Dictionary<string,object>? ModMetaData;
         private static Dictionary<string,string>? ModTranslate;
         private static readonly object ModTranslateLock = new object[1];
-        public static List<string> GetModI18nEN(string Input){
+        public static void GetModI18nEN(string Input){
             try{
                 List<string> search_key = new List<string>();
                 if (ModTranslate is null) LoadModData();
@@ -13,7 +13,7 @@ namespace SuikaiLauncher.Core.Mod{
                 {
                     if (name.Key.Contains(Input)) search_key.Add(name.Value);
                 }
-                return search_key;
+                //return search_key;
             }catch(Exception ex){
                 Logger.Log(ex,"获取工程列表搜索文本失败");
             }

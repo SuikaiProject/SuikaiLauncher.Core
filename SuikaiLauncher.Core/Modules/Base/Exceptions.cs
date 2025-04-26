@@ -1,3 +1,6 @@
 namespace Exceptions{
-    public class Login
+    public class InvalidMetaDataException:Exception{
+
+
+    }
 }

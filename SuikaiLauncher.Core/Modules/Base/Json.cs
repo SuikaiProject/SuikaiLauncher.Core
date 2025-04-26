@@ -1,17 +1,14 @@
-using System.Text.Json;
-
+using System.Text.Json.Nodes;
 namespace SuikaiLauncher.Core
 {
     public class Json
     {
-        public static JsonDocument GetJson(string content)
+        public static JsonNode GetJson(string JsonText)
         {
-            return JsonDocument.Parse(content);
+            return JsonNode.Parse(JsonText);
         }
-        public static string GetJsonText(dynamic content)
-        {
-            return JsonSerializer.Deserialize(content);
-        }
+        
+        
         
     }
 }
