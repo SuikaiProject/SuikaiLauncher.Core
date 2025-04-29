@@ -109,10 +109,22 @@ namespace SuikaiLauncher.Core
 
     public class Download
     {
+        public class FileMetaData{
+            public string? path {get;set;}
+            public string? hash {get;set;}
+            public string? algorithm {get;set;}
+            public long? size {get;set;}
+            public string? url {get;set;}
+            public bool ValidatePathContains(string path){
+                if (string.IsNullOrWhiteSpace(this.path) || string.IsNullOrWhiteSpace(path)) return false;
+                return Path.GetFullPath(this.path).StartsWith(path);
+            }
+
+        }
         public static readonly object FileListLock = new object[1];
         public static long TotalFileCouht = 0;
         public static long CompleteFileCount = 0;
-        public static void Start(List<Dictionary<string, object>> DlTasks, int MaxThreadCount = 64)
+        public static void Start(List<FileMetaData> DlTasks, int MaxThreadCount = 64)
         {
             SemaphoreSlim semaphore = new SemaphoreSlim(MaxThreadCount);
             Task[] DlTask = new Task[DlTasks.Count];
@@ -127,17 +139,17 @@ namespace SuikaiLauncher.Core
                     await semaphore.WaitAsync();
                     try
                     {
-                        object? FilePath = task.GetValueOrDefault("path", null);
-                        if (FilePath is not string filePath || string.IsNullOrWhiteSpace(filePath))
+                        string? FilePath = task.path;
+                        if (string.IsNullOrWhiteSpace(FilePath))
                         {
                             throw new ArgumentNullException("文件路径无效");
                         }
 
-                        HttpResponseMessage? Result = await Network.NetworkRequest(task.GetValueOrDefault("url", "http://localhost:8000")?.ToString());
+                        HttpResponseMessage? Result = await Network.NetworkRequest(task.url);
                         if (Result is null) throw new Exception("下载时出现未知错误");
 
                         using (Stream Reader = await Result.Content.ReadAsStreamAsync())
-                        using (Stream Writer = File.OpenWrite(filePath))
+                        using (Stream Writer = File.OpenWrite(FilePath))
                         {
                             if (Writer.CanWrite && Reader.CanRead)
                             {
