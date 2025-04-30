@@ -6,9 +6,11 @@
         {
             if (content is null || value is null) return false;
             string compstr = content;
-            string compstr2 = value;
             if (IgnoreCase) return compstr.ToLower().Contains(value.ToLower());
             return compstr.Contains(value);
+        }
+        public static bool IsNullOrWhiteSpaceF(this string? content){
+            return string.IsNullOrWhiteSpace(content);
         }
     }
 }

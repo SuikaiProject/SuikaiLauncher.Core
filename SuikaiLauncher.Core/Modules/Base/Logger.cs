@@ -38,7 +38,7 @@ public class Logger
             try
             {
                 Thread.Sleep(1000);
-                if (LogText.Count() <=0) continue;
+                if (LogText.Count <=0) continue;
                 lock (LogOutputLock)
                 {
                     foreach (string Text in LogText)

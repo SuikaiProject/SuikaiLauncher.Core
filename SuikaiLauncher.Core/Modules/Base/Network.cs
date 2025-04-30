@@ -194,11 +194,10 @@ namespace SuikaiLauncher.Core
         /// <summary>
         /// 使用 HttpClient 获取目标文件的内容
         /// </summary>
-        /// <param name="url">目标文件的远程地址</param>
-        /// <param name="RequireJson">是否解析 Json 文本</param>
+        /// <param name="FileMeta">目标文件的元数据</param>
         /// <returns>byte[]</returns>
-        public async static Task<byte[]> NetGetFileByClient(string url){
-            HttpResponseMessage? Response = await Network.NetworkRequest(url);
+        public async static Task<byte[]> NetGetFileByClient(FileMetaData FileMeta){
+            HttpResponseMessage? Response = await Network.NetworkRequest(FileMeta.url);
             if (Response is null) throw new WebException("下载文件失败");
             using (Stream Reader = await Response.Content.ReadAsStreamAsync()){
                 byte[]? data = null;
