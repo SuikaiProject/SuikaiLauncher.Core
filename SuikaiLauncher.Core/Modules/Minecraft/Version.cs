@@ -1,15 +1,13 @@
 using SuikaiLauncher.Core.Runtime.Java;
-using SuikaiLauncher.Core.Base.ThreadSafe;
 using System.Runtime.CompilerServices;
 
 namespace SuikaiLauncher.Core.Minecraft{
-    public class MinecraftVersion{
+    public class MinecraftVersionListSource{
         public string? McVersion;
 
-        public JavaProperty? RequireJavaVersion;
 
-        private static readonly DownloadSource Mojang = new DownloadSource() { ClientMetaV1 = "https://piston-meta.mojang.com/mc/game/version_manifest.json",ClientMetaV2 = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json",resource = "https://resources.download.minecraft.net",JavaList = "https://piston-meta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json"};
-        private static readonly DownloadSource BMCLAPI = new DownloadSource() { ClientMetaV1 = "https://piston-meta.mojang.com/mc/game/version_manifest.json",ClientMetaV2 = "https://bmclapi2.bangbang93.com/mc/game/version_manifest_v2.json",resource = "https://bmclapi2.bangbang93.com/assets",JavaList = "https://bmclapi2.bangbang93.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json"};
+        internal static readonly DownloadSource Mojang = new DownloadSource() { ClientMetaV1 = "https://piston-meta.mojang.com/mc/game/version_manifest.json",ClientMetaV2 = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json",resource = "https://resources.download.minecraft.net",JavaList = "https://piston-meta.mojang.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json",RepositoryName = "Mojang"};
+        internal static readonly DownloadSource BMCLAPI = new DownloadSource() { ClientMetaV1 = "https://piston-meta.mojang.com/mc/game/version_manifest.json",ClientMetaV2 = "https://bmclapi2.bangbang93.com/mc/game/version_manifest_v2.json",resource = "https://bmclapi2.bangbang93.com/assets",JavaList = "https://bmclapi2.bangbang93.com/v1/products/java-runtime/2ec0cc96c44e5a76b9c8b7c39df7210883d12871/all.json",RepositoryName = "BMCLAPI"};
         /// <summary>
         /// 用户自定义下载源，请注意如果添加过多下载源可能导致拉取版本列表/安装版本时下载缓慢。
         /// </summary>

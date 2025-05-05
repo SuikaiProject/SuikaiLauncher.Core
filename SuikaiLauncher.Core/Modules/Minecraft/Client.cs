@@ -2,33 +2,35 @@ using System.Text.Json.Nodes;
 using System.Text;
 using SuikaiLauncher.Core.Runtime.Java;
 using SuikaiLauncher.Core.Override;
-using Exceptions;
-using System.Threading.Tasks;
 using SuikaiLauncher.Core.Base;
-using System.Runtime.Versioning;
-using System.Reflection.Metadata.Ecma335;
-using System.Net.NetworkInformation;
+using SuikaiLauncher.Core.Modules.Minecraft;
 
 namespace SuikaiLauncher.Core.Minecraft {
     /// <summary>
     /// 加载器类型
     /// </summary>
-    public enum ModLoaderType{
-        Unavailable = 0,
-        Forge = 1,
-        Fabric = 2,
-        OptiFine = 3,
-        NeoForge = 4,
-        Quilt = 5,
-        LiteLoader = 6,
-        Mixin = 7
-    }
+    
     /// <summary>
     /// 版本类型
     /// </summary>
-    public enum VersionType{
-
+    public enum VersionType
+    {
+        Release = 0,
+        Snapshot = 1,
+        Special = 2,
+        Old = 3
     }
+    public class Subassembly
+    {
+        public string? ForgeVersion { get; set; }
+        public string? FabricVersion { get; set; }
+        public string? NeoForgeVersion { get; set; }
+        public string? QuiltVersion { get; set; }
+        public string? CleanroomVersion { get; set; }
+        public string? OptiFineVersion { get; set; }
+        public string? LiteLoaderVersion { get; set; }
+    }
+     
     /// <summary>
     /// 版本源数据
     /// </summary>
@@ -51,25 +53,27 @@ namespace SuikaiLauncher.Core.Minecraft {
         /// </summary>
         public string? VersionName { get; set; }
         /// <summary>
-        /// 是否可安装 Mod
+        /// 附加组件信息
         /// </summary>
-        public bool Modable;
-        /// <summary>
-        /// Mod 加载器类型
-        /// </summary>
-        public ModLoaderType ModLoader { get; set; }
+        public Subassembly? SubassemblyMeta { get ; set; }
         /// <summary>
         /// 安装此版本的 Minecraft 文件夹
         /// </summary>
-        public string? MinecraftFloder {get;set;}
+        public string? MinecraftFolder {get;set;}
         /// <summary>
         /// 版本 Json 文件 Hash
         /// </summary>
-        public string? JsonHash;
+        public string? JsonHash { get; set; }
         /// <summary>
         /// 版本发行时间
         /// </summary>
-        public DateTime? ReleaseTime;
+        public DateTime? ReleaseTime { get; set; }
+
+        public VersionType Type { get; set; }
+        /// <summary>
+        /// 安装目录
+        /// </summary>
+        public string? InstallFolder;
         /// <summary>
         /// 根据版本号查找对应的版本
         /// </summary>
@@ -99,48 +103,68 @@ namespace SuikaiLauncher.Core.Minecraft {
             JsonNode? VersionJson;
             List<Download.FileMetaData> DownloadList =new();
             // 基本参数检查（版本已存在或者关键参数为空或 null）
-            if (Directory.Exists($"{Version.MinecraftFloder}/versions/{Version.VersionName}") && File.Exists($"{Version.MinecraftFloder}/versions/{Version.VersionName}/{Version.VersionName}.json")) throw new OperationCanceledException("版本已存在");
-            if (Version.MinecraftFloder.IsNullOrWhiteSpaceF() || Version.JsonUrl.IsNullOrWhiteSpaceF()) throw new NullReferenceException("指定参数中有一项或多项为空或 null");
-            if (Version.MinecraftFloder.EndsWith("/")) Version.MinecraftFloder = Version.MinecraftFloder.TrimEnd('/');
             if (Version.VersionName.IsNullOrWhiteSpaceF()) Version.VersionName = Version.Version;
+            if (Directory.Exists($"{Version.MinecraftFolder}/versions/{Version.VersionName}") && File.Exists($"{Version.MinecraftFolder}/versions/{Version.VersionName}/{Version.VersionName}.json")) throw new OperationCanceledException("版本已存在");
+            if (Version.MinecraftFolder.IsNullOrWhiteSpaceF() || Version.JsonUrl.IsNullOrWhiteSpaceF()) throw new NullReferenceException("指定参数中有一项或多项为空或 null");
+            if (Version.MinecraftFolder.EndsWith("/")) Version.MinecraftFolder = Version.MinecraftFolder.TrimEnd('/');
             Logger.Log($"[Minecraft] 开始安装 Minecraft {Version.Version}");
             Logger.Log("[Minecraft] ========== 核心元数据 ==========");
             Logger.Log($"[Minecraft] 核心名称：{Version.VersionName}");
             Logger.Log($"[Minecraft] 版本：{Version.Version}");
-            Logger.Log($"[Minecraft] 可安装 Mod： {((Version.Modable)? true:false)}");
-            Logger.Log($"[Minecraft] 附加组件：{nameof(Version.ModLoader)}");
-            Logger.Log($"[Minecraft] 要求的 Java 版本：{Version.RequireJava.MojarVersion}");
-            Logger.Log($"[Minecraft] 安装路径：");
-            RawJson = await DownloadVersionJson(Version,$"{Version.MinecraftFloder}/versions/{Version.VersionName}/{Version.VersionName}.json");
+            Logger.Log($"[Minecraft] 版本类型：{Enum.GetName(Version.Type)}");
+            Logger.Log($"[Minecraft] 可安装 Mod： {Version.SubassemblyMeta is not null}");
+            Logger.Log($"[Minecraft] 要求的 Java 版本： {( (Version.RequireJava is not null) ? $"Java {Version.RequireJava.MojarVersion}":"未指定" )}");
+            Logger.Log($"[Minecraft] 安装路径：{Version.InstallFolder}");
+            Logger.Log("[Minecraft] ===========================");
+            
+            RawJson = await DownloadVersionJson(Version,$"{Version.MinecraftFolder}/versions/{Version.VersionName}/{Version.VersionName}.json");
             VersionJson = Json.GetJson(RawJson);
             if (VersionJson is null) throw new InvalidDataException();
-            Tuple<List<Download.FileMetaData>,List<Download.FileMetaData>> MetaData = await GetMinecraftLib(VersionJson,Version.MinecraftFloder,RawJson.ContainsF("classifiers"));
+            Tuple<List<Download.FileMetaData>,List<Download.FileMetaData>> MetaData = await GetMinecraftLib(VersionJson,Version,RawJson.ContainsF("classifiers"));
             DownloadList.AddRange(MetaData.Item1);
             DownloadList.AddRange(MetaData.Item2);
-            DownloadList.AddRange(await GetMinecraftAssets(VersionJson));
-            Download.Start(DownloadList);
+            DownloadList.AddRange(await GetMinecraftAssets(VersionJson,Version,Version.Type == VersionType.Old));
+            if (!VersionJson["downloads"].ToString().IsNullOrWhiteSpaceF())
+            {
+                DownloadList.Add(new Download.FileMetaData()
+                {
+                    url = VersionJson["downloads"]?["client"]?["url"]?.ToString(),
+                    path = $"{Version.InstallFolder}/{Version.VersionName}.jar",
+                    hash = VersionJson["downloads"]?["client"]?["sha1"]?.ToString(),
+                    algorithm = "sha1",
+                    size = (long?)VersionJson["downloads"]?["client"]?["size"]
+                });
+            }
+            // Download.Start(DownloadList);
+            
         }
         public async static Task<string>? DownloadVersionJson(McVersion version, string path,bool RequireOutputOnly = false)
         {
-            if (Directory.Exists(path))
+            if (!Directory.Exists(path))
             {
-                byte[] Result = await Download.NetGetFileByClient(new Download.FileMetaData(){
-                    url = version.JsonUrl
-                    hash = 
+                Directory.CreateDirectory(path);
+                
+                string Result = await Download.NetGetFileByClient(new Download.FileMetaData(){
+                    url = version.JsonUrl,
+                    hash =  version.JsonHash
                 });
                 if (Result != null)
                 {
-                    string RawJson = Encoding.UTF8.GetString(Result);
+                    
                     if (!RequireOutputOnly)
                     {
-
+                        File.WriteAllBytes(path,Encoding.UTF8.GetBytes(Result));
                     }
-                    return RawJson;
+                    return Result;
+                }
+                else
+                {
+                    throw new ArgumentException("下载文件失败");
                 }
             }
-            throw new FileNotFoundException("指定的路径不存在");
+            throw new FileNotFoundException("指定的路径已存在");
         }
-        public async static Task<Tuple<List<Download.FileMetaData>,List<Download.FileMetaData>>> GetMinecraftLib(JsonNode VersionJson,string MinecraftFolder,bool OldVersionInstallMethod = false) 
+        public async static Task<Tuple<List<Download.FileMetaData>,List<Download.FileMetaData>>> GetMinecraftLib(JsonNode VersionJson,McVersion Version,bool OldVersionInstallMethod = false) 
         {
             List<Download.FileMetaData> CommonLib = new();
             List<Download.FileMetaData> NativesLib = new();
@@ -159,7 +183,7 @@ namespace SuikaiLauncher.Core.Minecraft {
                                 url = (string?)artifact["url"],
                                 hash = (string?)artifact["sha1"],
                                 algorithm = "sha1",
-                                path = $"{MinecraftFolder}/libraries/{artifact["path"]}",
+                                path = $"{Version.MinecraftFolder}/libraries/{artifact["path"]}",
                                 size = (long?)artifact["size"]
                             };
                             CommonLib.Add(MetaData);
@@ -172,7 +196,7 @@ namespace SuikaiLauncher.Core.Minecraft {
                                         url = (string?)classifier["natives-windows"]?["url"],
                                         hash = (string?)classifier["natives-windows"]?["sha1"],
                                         size = (long?)classifier["natives-windows"]?["size"],
-                                        path = $"{MinecraftFolder}/libraries/{(string?)classifier["natives-windows"]?["path"]}",
+                                        path = $"{Version.MinecraftFolder}/libraries/{(string?)classifier["natives-windows"]?["path"]}",
                                         algorithm = "sha1"
                                     };
                                     NativesLib.Add(WinLibMetaData);
@@ -182,7 +206,7 @@ namespace SuikaiLauncher.Core.Minecraft {
                                         url = (string?)classifier["natives-linux"]?["url"],
                                         hash = (string?)classifier["natives-linux"]?["sha1"],
                                         size = (long?)classifier["natives-linux"]?["size"],
-                                        path = $"{MinecraftFolder}/libraries/{(string?)classifier["natives-linux"]?["path"]}",
+                                        path = $"{Version.MinecraftFolder}/libraries/{(string?)classifier["natives-linux"]?["path"]}",
                                         algorithm = "sha1"
                                     };
                                     NativesLib.Add(LnxLibMetaData);
@@ -192,7 +216,7 @@ namespace SuikaiLauncher.Core.Minecraft {
                                         url = (string?)classifier["natives-osx"]?["url"],
                                         hash = (string?)classifier["natives-osx"]?["sha1"],
                                         size = (long?)classifier["natives-osx"]?["size"],
-                                        path = $"{MinecraftFolder}/libaraies/{(string?)classifier["natives-osx"]?["path"]}",
+                                        path = $"{Version.MinecraftFolder}/libaraies/{(string?)classifier["natives-osx"]?["path"]}",
                                         algorithm = "sha1"
                                     };
                                     NativesLib.Add(OsxLibMetaData);
@@ -212,14 +236,14 @@ namespace SuikaiLauncher.Core.Minecraft {
                     if (library is null) throw new InvalidDataException("Json 结构无效");
                     JsonNode? artifact = library["downloads"];
                     // natives 文件
-                    if (artifact["url"] is not null || artifact["url"].ToString().ContainsF("native")){
+                    if (artifact is not null && artifact["url"] is not null && artifact["url"].ToString().ContainsF("native")){
                         // 排除架构错误的支持库
                         if (artifact["url"].ToString().ContainsF("arm") && (Environments.SystemArch != System.Runtime.InteropServices.Architecture.Arm || Environments.SystemArch != System.Runtime.InteropServices.Architecture.Arm64)) continue;
                         // 根据 url 判断支持库适用的操作系统
                         if (artifact["url"].ToString().ContainsF("windows") && Environments.OSType.Windows == Environments.SystemType){
                             Download.FileMetaData NativeLib = new(){
                                 url = (string?)artifact["url"],
-                                path = $"{MinecraftFolder}/libraries/{(string?)artifact["path"]}",
+                                path = $"{Version.MinecraftFolder}/libraries/{(string?)artifact["path"]}",
                                 hash = (string?)artifact["sha1"],
                                 size = (long?)artifact["size"],
                                 algorithm = "sha1"
@@ -229,7 +253,7 @@ namespace SuikaiLauncher.Core.Minecraft {
                         else if (artifact["url"].ToString().ContainsF("linux") && Environments.OSType.Linux == Environments.SystemType){
                             Download.FileMetaData NativeLib = new(){
                                 url = (string?)artifact["url"],
-                                path = $"{MinecraftFolder}/libraries/{(string?)artifact["path"]}",
+                                path = $"{Version.MinecraftFolder}/libraries/{(string?)artifact["path"]}",
                                 hash = (string?)artifact["sha1"],
                                 size = (long?)artifact["size"],
                                 algorithm = "sha1"
@@ -239,7 +263,7 @@ namespace SuikaiLauncher.Core.Minecraft {
                         else if ((artifact["url"].ToString().ContainsF("osx") ||artifact["url"].ToString().ContainsF("macos")) && Environments.OSType.MacOS == Environments.SystemType){
                             Download.FileMetaData NativeLib = new(){
                                 url = (string?)artifact["url"],
-                                path = $"{MinecraftFolder}/libraries/{(string?)artifact["path"]}",
+                                path = $"{Version.MinecraftFolder}/libraries/{(string?)artifact["path"]}",
                                 hash = (string?)artifact["sha1"],
                                 size = (long?)artifact["size"],
                                 algorithm = "sha1"
@@ -250,7 +274,7 @@ namespace SuikaiLauncher.Core.Minecraft {
                         else {
                             Download.FileMetaData NativeLib = new(){
                                 url = (string?)artifact["url"],
-                                path = $"{MinecraftFolder}/libraries/{(string?)artifact["path"]}",
+                                path = $"{Version.MinecraftFolder}/libraries/{(string?)artifact["path"]}",
                                 hash = (string?)artifact["sha1"],
                                 size = (long?)artifact["size"],
                                 algorithm = "sha1"
@@ -260,7 +284,7 @@ namespace SuikaiLauncher.Core.Minecraft {
                     }
                     CommonLib.Add(new Download.FileMetaData(){
                         url = (string?)artifact["url"],
-                        path = $"{MinecraftFolder}/libraries/{(string?)artifact["path"]}",
+                        path = $"{Version.MinecraftFolder}/libraries/{(string?)artifact["path"]}",
                         hash = (string?)artifact["sha1"],
                         size = (long?)artifact["size"],
                         algorithm = "sha1"
@@ -277,10 +301,43 @@ namespace SuikaiLauncher.Core.Minecraft {
                 Logger.Log(ex, "获取支持库列表失败");
                 throw;
             }
-            throw new Exception("未知错误");
+            
+                throw new Exception("未知错误");
         }
-        public async static Task<List<Download.FileMetaData>> GetMinecraftAssets(JsonNode VersionJson) {
-            JsonNode? Result = Download.NetGetFileByClient()
+        public async static Task<List<Download.FileMetaData>> GetMinecraftAssets(JsonNode VersionJson,McVersion Version,bool CopyToResource) {
+            List<Download.FileMetaData> DownloadList = new();
+            string? VersionAssetsUrl = VersionJson["assetsIndex"]?["url"]?.ToString();
+            int? VersionAssetsSize = (int?)VersionJson["assetsIndex"]?["size"];
+            string? VersionAssetsHash = VersionJson["assetsIndex"]?["sha1"]?.ToString();
+            string? VersionAssetsIndex = VersionJson["assetsIndex"]?["id"]?.ToString();
+            if (VersionAssetsUrl.IsNullOrWhiteSpaceF() || VersionAssetsSize is not null || VersionAssetsHash.IsNullOrWhiteSpaceF()) throw new ArgumentException("无效的安装元数据");
+            string Result = await Download.NetGetFileByClient(new Download.FileMetaData()
+            {
+                url = VersionAssetsUrl,
+                size = VersionAssetsSize,
+                hash = VersionAssetsHash,
+                algorithm = "sha1",
+                path = $"{Version.MinecraftFolder}/assets/indexes/{VersionAssetsIndex}.json"
+            });
+            JsonNode? AssetsJson = Json.GetJson(Result);
+            JsonNode? AssetsObject = AssetsJson?["objects"];
+            if (AssetsObject is not null)
+            {
+                foreach (var Resource in AssetsObject as JsonObject)
+                {
+                    string ResHash = Resource.Value["sha1"]?.ToString();
+                    DownloadList.Add(new Download.FileMetaData()
+                    {
+                        url = Source.GetResourceDownloadSource(Resource.Value["sha1"]?.ToString()),
+                        path = (CopyToResource) ? $"{Version.MinecraftFolder}/resource/{Resource.Key}" : $"{Version.MinecraftFolder}/assets/{ResHash.Substring(0, 2)}/{ResHash}",
+                        hash = ResHash,
+                        algorithm = "sha1",
+                        size = (long?)Resource.Value["size"]
+                    });
+                }
+                return DownloadList;
+            }
+            throw new ArgumentException("版本 Json 文件存在问题，无法安装！");
         }
             
     }

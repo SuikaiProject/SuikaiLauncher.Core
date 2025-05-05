@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using System.Text.Json.Nodes;
 namespace SuikaiLauncher.Core
 {
@@ -5,10 +6,18 @@ namespace SuikaiLauncher.Core
     {
         public static JsonNode? GetJson(string JsonText)
         {
-            return JsonNode.Parse(JsonText);
+            try
+            {
+                return JsonNode.Parse(JsonText);
+            }
+            catch (Exception ex)
+            {
+                Logger.Log(ex, "–Ú¡–ªØ Json  ß∞‹");
+                throw;
+            }
+
+
+
         }
-        
-        
-        
     }
 }

@@ -17,7 +17,7 @@ namespace SuikaiLauncher.Core
         private static readonly HttpClientHandler clientHandler = new HttpClientHandler() { AllowAutoRedirect = false };
         private static readonly string LauncherUA = "SuikaiLauncher/0.0.2";
         private static readonly string SpacialBrowserUA = "SuikaiLauncher/0.0.2 Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:137.0) Gecko/20100101 Firefox/137.0";
-        
+
         public async static Task<HttpResponseMessage?> NetworkRequest(string? url, Dictionary<string, string>? headers = null, string? data = null, byte[]? ByteData = null, int timeout = 10000, string method = "GET", bool UseBrowserUA = false, int retry = 5)
         {
             try
@@ -95,6 +95,7 @@ namespace SuikaiLauncher.Core
                     {
                         Logger.Log(ex, "[Network] 请求失败");
                         if (--retry <= 0) throw;
+                        Request = new HttpRequestMessage(RequestMethod, url);
                     }
                 }
             }
@@ -109,13 +110,13 @@ namespace SuikaiLauncher.Core
 
     public class Download
     {
-        public class FileMetaData{
-            public string? path {get;set;}
-            public string? hash {get;set;}
-            public string? algorithm {get;set;}
-            public long? size {get;set;}
-            public string? url {get;set;}
-            public bool ValidatePathContains(string path){
+        public class FileMetaData {
+            public string? path { get; set; }
+            public string? hash { get; set; }
+            public string? algorithm { get; set; }
+            public long? size { get; set; }
+            public string? url { get; set; }
+            public bool ValidatePathContains(string path) {
                 if (string.IsNullOrWhiteSpace(this.path) || string.IsNullOrWhiteSpace(path)) return false;
                 return Path.GetFullPath(this.path).StartsWith(path);
             }
@@ -192,18 +193,20 @@ namespace SuikaiLauncher.Core
             }
         }
         /// <summary>
-        /// 使用 HttpClient 获取目标文件的内容
+        /// 使用 HttpClient 获取目标文件的内容，只支持文本文件
         /// </summary>
         /// <param name="FileMeta">目标文件的元数据</param>
         /// <returns>byte[]</returns>
-        public async static Task<byte[]> NetGetFileByClient(FileMetaData FileMeta){
+        public async static Task<string> NetGetFileByClient(FileMetaData FileMeta) {
             HttpResponseMessage? Response = await Network.NetworkRequest(FileMeta.url);
             if (Response is null) throw new WebException("下载文件失败");
-            using (Stream Reader = await Response.Content.ReadAsStreamAsync()){
-                byte[]? data = null;
-                Reader.Read(data);
-                if (data is null) throw new IOException("读取网络流失败");
-                return data;
+            if (!Response.IsSuccessStatusCode) throw new WebException($"远程服务器返回错误：{Response.StatusCode}");
+            using (Stream ResponseStream = await Response.Content.ReadAsStreamAsync())
+            {
+                using (StreamReader Reader = new(ResponseStream))
+                {
+                    return Reader.ReadToEnd();
+                }
             }
         }
     }
