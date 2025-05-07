@@ -12,7 +12,7 @@ namespace SuikaiLauncher.Core
             }
             catch (Exception ex)
             {
-                Logger.Log(ex, "ÐòÁÐ»¯ Json Ê§°Ü");
+                Logger.Log(ex, "æ— æ•ˆçš„ Json ç»“æž„");
                 throw;
             }
 

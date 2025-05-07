@@ -18,12 +18,11 @@ namespace SuikaiLauncher.Core
         private static readonly string LauncherUA = "SuikaiLauncher/0.0.2";
         private static readonly string SpacialBrowserUA = "SuikaiLauncher/0.0.2 Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:137.0) Gecko/20100101 Firefox/137.0";
 
-        public async static Task<HttpResponseMessage?> NetworkRequest(string? url, Dictionary<string, string>? headers = null, string? data = null, byte[]? ByteData = null, int timeout = 10000, string method = "GET", bool UseBrowserUA = false, int retry = 5)
+        public async static Task<HttpResponseMessage> NetworkRequest(string url, Dictionary<string, string>? headers = null, string? data = null, byte[]? ByteData = null, int timeout = 10000, string method = "GET", bool UseBrowserUA = false, int retry = 5)
         {
             try
             {
                 int redirect = 20;
-                if (string.IsNullOrWhiteSpace(url)) return null;
                 List<string> redirectHistory = new List<string> { url };
                 client.Timeout = TimeSpan.FromMilliseconds(timeout);
                 client.DefaultRequestHeaders.Clear();
@@ -104,18 +103,18 @@ namespace SuikaiLauncher.Core
                 Logger.Log(ex, "[Network] 请求失败");
                 throw;
             }
-            return null;
+            throw new Exception("未知错误");
         }
     }
 
     public class Download
     {
         public class FileMetaData {
-            public string? path { get; set; }
+            public string path { get; set; }
             public string? hash { get; set; }
             public string? algorithm { get; set; }
-            public long? size { get; set; }
-            public string? url { get; set; }
+            public long size { get; set; }
+            public string url { get; set; }
             public bool ValidatePathContains(string path) {
                 if (string.IsNullOrWhiteSpace(this.path) || string.IsNullOrWhiteSpace(path)) return false;
                 return Path.GetFullPath(this.path).StartsWith(path);

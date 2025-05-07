@@ -1,19 +1,21 @@
 using Microsoft.Identity.Client;
 using Microsoft.Identity.Client.Broker;
-using SuikaiLauncher.Core.Modules.Base;
+using SuikaiLauncher.Core.Base;
 using SuikaiLauncher.Core.Override;
 
 namespace SuikaiLauncher.Core.Account {
+    /// <summary>
+    /// å¾®è½¯ç™»å½•
+    /// </summary>
     public class Microsoft
     {
-        
         public static string ClientId = "";
-        private static readonly BrokerOptions options = new(BrokerOptions.OperatingSystems.Windows) { Title = "SuikaiLauncher.Core °²È«µÇÂ¼" };
+        private static readonly BrokerOptions options = new(BrokerOptions.OperatingSystems.Windows) { Title = "SuikaiLauncher.Core å®‰å…¨ç™»å½•" };
         private static IPublicClientApplication? OAuthClient;
         private static readonly List<string> Scope = new() { "XboxLive.Signin", "offline_access" };
         private static string OriginId = "";
         private static readonly object MSOAuthLock = new object[1];
-        // Éè±¸´úÂëÁ÷µÇÂ¼ÓÃ
+        // è®¾å¤‡ä»£ç æµç”¨
         public static string? UserCode;
         public static string? VerificationUrl;
 
@@ -21,37 +23,37 @@ namespace SuikaiLauncher.Core.Account {
         {
             lock (MSOAuthLock)
             {
-                if (ClientId.IsNullOrWhiteSpaceF()) throw new ArgumentNullException("Client ID ²»ÄÜÎª¿Õ");
+                if (ClientId.IsNullOrWhiteSpaceF()) throw new ArgumentNullException("Client ID ä¸èƒ½ä¸ºç©º");
                 OAuthClient = PublicClientApplicationBuilder
                     .Create(ClientId)
                     .WithDefaultRedirectUri()
-                    .WithParentActivityOrWindow(Window.GetForegroundWindow)
+                    .WithParentActivityOrWindow(Win32.GetForegroundWindow)
                     .WithBroker(options)
                     .Build();
             }
         }
-        public static Tuple<bool,AuthenticationResult?> MSLoginWithWAM() {
+        internal static Tuple<bool,AuthenticationResult?> MSLoginWithWAM() {
             try {
-                Logger.Log("[Account] Microsoft µÇÂ¼¿ªÊ¼£¨ÊÚÈ¨´úÂëÁ÷µÇÂ¼£©");
+                Logger.Log("[Account] Microsoft ç™»å½•å¼€å§‹ï¼ˆæˆæƒä»£ç æµç™»å½•ï¼‰");
                 if (ClientId != OriginId) OAuthClient = null; OriginId = ClientId;
                 if (OAuthClient is null ) InitOAuthClient();
-                Logger.Log("[Account] ³õÊ¼»¯ WAM ³É¹¦");
+                Logger.Log("[Account] åˆå§‹åŒ– WAM æˆåŠŸ");
                 AuthenticationResult? Result = OAuthClient
                     .AcquireTokenInteractive(Scope)
                                 .ExecuteAsync()
                                 .GetAwaiter()
                                 .GetResult();
-                Logger.Log("[Account] Microsoft µÇÂ¼³É¹¦");
-                Logger.Log($"[Account] ÁîÅÆ¹ıÆÚÊ±¼ä£º{Result.ExpiresOn}");
+                Logger.Log("[Account] Microsoft ç™»å½•æˆåŠŸ");
+                Logger.Log($"[Account] ä»¤ç‰Œè¿‡æœŸæ—¶é—´ï¼š{Result.ExpiresOn} ç§’");
                 
                 return Tuple.Create<bool, AuthenticationResult?>(true,Result);
             } catch (MsalUiRequiredException ex) {
-                Logger.Log(ex, "[Account] Microsoft µÇÂ¼Ê§°Ü");
+                Logger.Log(ex, "[Account] Microsoft ç™»å½•å¤±è´¥");
                 return Tuple.Create<bool, AuthenticationResult?>(false, null);
             }
             catch (Exception ex)
             {
-                Logger.Log(ex, "Microsoft µÇÂ¼Ê§°Ü");
+                Logger.Log(ex, "Microsoft ç™»å½•æ—¶å‘ç”ŸæœªçŸ¥é”™è¯¯");
                 throw;
             }
         }
@@ -62,7 +64,7 @@ namespace SuikaiLauncher.Core.Account {
         }
         internal static Tuple<bool,AuthenticationResult?> MSLoginDevice()
         {
-            Logger.Log("[Account] Microsoft µÇÂ¼¿ªÊ¼£¨Éè±¸´úÂëÁ÷µÇÂ¼£©");
+            Logger.Log("[Account] Microsoft ç™»å½•å¼€å§‹ï¼ˆè®¾å¤‡ä»£ç æµç™»å½•ï¼‰");
             try
             {
                 var Result = OAuthClient
@@ -70,31 +72,70 @@ namespace SuikaiLauncher.Core.Account {
                     .ExecuteAsync()
                     .GetAwaiter()
                     .GetResult();
+                
                 return Tuple.Create<bool,AuthenticationResult?>(true, Result);
             }catch(MsalException ex){
-                Logger.Log(ex, "[Account] Microsoft µÇÂ¼Ê§°Ü");
+                Logger.Log(ex, "[Account] Microsoft ç™»å½•å¤±è´¥");
                 return Tuple.Create<bool, AuthenticationResult?>(false, null);
             }catch(Exception ex)
             {
-                Logger.Log(ex, "[Account] Microsoft µÇÂ¼¹ı³ÌÖĞ³öÏÖÎ´Öª´íÎó");
+                Logger.Log(ex, "[Account] Microsoft ç™»å½•æ—¶å‘ç”ŸæœªçŸ¥é”™è¯¯");
                 throw;
             }
         } 
-        internal static AuthenticationResult? MSLoginRefresh()
-        {
-            return null;
-        }
-        internal async static Task<IEnumerable<IAccount>> GetLoginAccount()
+        internal async static Task<AuthenticationResult?> MSLoginRefresh(string AccountID)
         {
             if (OAuthClient is null) InitOAuthClient();
-            return await OAuthClient.GetAccountsAsync();
+            try{
+                var Result = await GetLoginAccount();
+                if (!Result.Item1 || Result.Item2 is null) return null;
+                foreach(var account in Result.Item2){
+                    if (!(account.HomeAccountId.ObjectId == AccountID))  continue;
+                    return OAuthClient
+                    .AcquireTokenSilent(Scope,account.HomeAccountId.ObjectId)
+                    .ExecuteAsync()
+                    .GetAwaiter()
+                    .GetResult();
+                }
+                return null;
+            }catch(MsalUiRequiredException){
+                var Result = MSLoginWithWAM();
+                if(Result.Item1) return Result.Item2;
+                return null;
+            }
+            catch(Exception ex){
+                Logger.Log(ex,"[Account] Microsoft åˆ·æ–°ç™»å½•å¤±è´¥");
+                return null;
+            }
+            
         }
-        public static int MSALogin(bool PerferDeviceLogin)
+
+        internal async static Task<Tuple<bool,IEnumerable<IAccount>?>> GetLoginAccount()
+        {
+            try{
+                if (OAuthClient is null) InitOAuthClient();
+                return Tuple.Create<bool,IEnumerable<IAccount>?>(true,await OAuthClient.GetAccountsAsync());
+            }catch(Exception ex){
+                Logger.Log(ex,"[Account] Microsoft ç™»å½•å¤±è´¥");
+                return Tuple.Create<bool,IEnumerable<IAccount>?>(true,null);
+            }
+        }
+
+        /// <summary>
+        /// WIP:å…¬å¼€ç™»å½•æ¥å£ï¼Œè¿”å›è´¦æˆ·çš„å…¨å±€ UID
+        /// </summary>
+        /// <param name="PerferDeviceLogin">æ˜¯å¦ä¼˜å…ˆä½¿ç”¨è®¾å¤‡ä»£ç æµç™»å½•</param>
+        /// <returns>ä¸€ä¸ªå­—ç¬¦ä¸²å½¢å¼çš„ GUID</returns>
+        public static string? MSALogin(bool PerferDeviceLogin)
         {
             Tuple<bool,AuthenticationResult?>? Result;
             if (PerferDeviceLogin) Result = MSLoginDevice();
             else Result = MSLoginWithWAM();
-                return 0;
+            if(Result.Item1 && Result.Item2 is not null){
+                return Result.Item2.Account.HomeAccountId.ObjectId;
+            }
+            return null;
         }
+
     }
 }

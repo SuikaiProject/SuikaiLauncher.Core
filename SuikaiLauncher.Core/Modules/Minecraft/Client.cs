@@ -3,7 +3,6 @@ using System.Text;
 using SuikaiLauncher.Core.Runtime.Java;
 using SuikaiLauncher.Core.Override;
 using SuikaiLauncher.Core.Base;
-using SuikaiLauncher.Core.Modules.Minecraft;
 
 namespace SuikaiLauncher.Core.Minecraft {
     /// <summary>

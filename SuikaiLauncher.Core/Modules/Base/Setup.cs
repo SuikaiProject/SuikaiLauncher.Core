@@ -1,4 +1,4 @@
-﻿using System.Xml.Linq;
+using System.Xml.Linq;
 using System.Runtime.InteropServices;
 using System.Data;
 using SuikaiLauncher.Core.Override;

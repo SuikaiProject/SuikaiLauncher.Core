@@ -7,13 +7,14 @@ using System.Runtime.CompilerServices;
     public class Logger
     {
         private readonly static object LogOutputLock = new object[1];
+        private readonly static object LogModeLock = new object[1];
         private readonly static List<String> LogText = new List<string>();
 
         public static string GetLogText() {
             lock (LogOutputLock)
             {
                 Console.WriteLine(LogText.Count);
-                if (LogText.Count() <= 0) return "";
+                if (LogText.Count <= 0) return "";
                 string LogData = "";
                 foreach (string content in LogText)
                 {
@@ -23,7 +24,7 @@ using System.Runtime.CompilerServices;
             }
         }
     
-        public static bool DebugMode = false;
+        public static bool DebugMode = true;
 
         public enum LogLevel
         {
@@ -50,16 +51,16 @@ using System.Runtime.CompilerServices;
         {
             lock (LogOutputLock)
             {
-                string output = $"[{getCurrentTime()}] " + GetExceptionDetail(ex, true);
-                Console.WriteLine(output);
+                string output = $"[{getCurrentTime()}] {message}:" + GetExceptionDetail(ex, true);
+                if (DebugMode) Console.WriteLine(output);
                 LogText.Add(output);
             }
         }
 
         public static void ChangeDebugMode(){
-            lock(LogOutputLock){
+            lock(LogModeLock){
                 DebugMode = !DebugMode;
-                if(DebugMode) Log("[Logger] 已进入调试模式，这可能会导致性能下降，如无必要请勿开启！");
+                if(DebugMode) Log("[Logger] 已进入调试模式，这可能会导致性能下降，如无必要请勿开启");
             }
         }
 

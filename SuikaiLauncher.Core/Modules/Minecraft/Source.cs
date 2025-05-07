@@ -1,10 +1,11 @@
 ﻿using SuikaiLauncher.Core.Minecraft;
 using SuikaiLauncher.Core.Override;
 
-namespace SuikaiLauncher.Core.Modules.Minecraft
+namespace SuikaiLauncher.Core.Minecraft
 {
     public class Source
     {
+        // 下载源质量检测之后再说，现在先摇骰子
         internal static readonly Random Selector = new();
         public static bool PerferOfficial = true;
         public static string GetResourceDownloadSource(string hash)

@@ -7,7 +7,7 @@ namespace SuikaiLauncher.Core.Mod{
         private static readonly object ModTranslateLock = new object[1];
         public static void GetModI18nEN(string Input){
             try{
-                List<string> search_key = new List<string>();
+                List<string> search_key = new();
                 if (ModTranslate is null) LoadModData();
                 foreach (var name in ModTranslate)
                 {
