@@ -7,7 +7,7 @@ namespace SuikaiLauncher.Core.Account{
         public string PlayerName = "";
         public string PlayerUUID = "";
         public string PlayerSkin = "";
-        public List<string> PlayerCapes = "";
+        public List<string>? PlayerCapes;
     }
     public class MinecraftYggdrasil{
         internal async Task<Tuple<bool,string>> YggdrasilAuthorize(string XSTSToken,string UserHash){
@@ -40,21 +40,22 @@ namespace SuikaiLauncher.Core.Account{
                     ["Authorization"] = AccessToken
                 }
             ) ;
-            JsonNode UserAuthResult = Json.GetJson(FileIO.ReadAsString(Response));
-            return !UserAuthResult["items"] == [];
+            JsonNode UserAuthResult = Json.GetJson(await FileIO.ReadAsString(Response));
+            return !(Json.GetJsonArray(UserAuthResult["items"]).Count <= 0);
         }
-        internal async static Task<MinecraftProfile> GetMinecraftProfile(string AccessToken){
+        internal async static Task<MinecraftProfile?> GetMinecraftProfile(string AccessToken){
             try{
                 HttpResponseMessage Response = await Network.NetworkRequest(
                     "https://api.minecraftservices.com/minecraft/profile",
                     new Dictionary<string, string>() {
                         ["Authorization"] = AccessToken
                     });
-                JsonNode PlayerProfile = Json.GetJson(FileIO.ReadAsString(Response));
+                JsonNode PlayerProfile = Json.GetJson(await FileIO.ReadAsString(Response));
                 
             }catch (Exception ex){
                 Logger.Log(ex,"[Account] 获取档案信息失败");
             }
+            return null;
         }
     }
 }

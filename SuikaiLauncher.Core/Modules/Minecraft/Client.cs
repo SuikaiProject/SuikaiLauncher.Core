@@ -1,3 +1,5 @@
+#pragma warning disable CS8602,CS8604,CS8601,CS8600
+
 using System.Text.Json.Nodes;
 using System.Text;
 using SuikaiLauncher.Core.Runtime.Java;
@@ -131,7 +133,7 @@ namespace SuikaiLauncher.Core.Minecraft {
                     path = $"{Version.InstallFolder}/{Version.VersionName}.jar",
                     hash = VersionJson["downloads"]?["client"]?["sha1"]?.ToString(),
                     algorithm = "sha1",
-                    size = (long?)VersionJson["downloads"]?["client"]?["size"]
+                    size = long.Parse(VersionJson["downloads"]?["client"]?["size"].ToString())
                 });
             }
             // Download.Start(DownloadList);
@@ -183,7 +185,7 @@ namespace SuikaiLauncher.Core.Minecraft {
                                 hash = (string?)artifact["sha1"],
                                 algorithm = "sha1",
                                 path = $"{Version.MinecraftFolder}/libraries/{artifact["path"]}",
-                                size = (long?)artifact["size"]
+                                size = (long)artifact["size"]
                             };
                             CommonLib.Add(MetaData);
                         }
@@ -192,9 +194,9 @@ namespace SuikaiLauncher.Core.Minecraft {
                             switch (Environments.SystemType){
                                 case Environments.OSType.Windows:
                                     Download.FileMetaData WinLibMetaData = new(){
-                                        url = (string?)classifier["natives-windows"]?["url"],
-                                        hash = (string?)classifier["natives-windows"]?["sha1"],
-                                        size = (long?)classifier["natives-windows"]?["size"],
+                                        url = (string)classifier["natives-windows"]?["url"],
+                                        hash = (string)classifier["natives-windows"]?["sha1"],
+                                        size = (long)classifier["natives-windows"]?["size"],
                                         path = $"{Version.MinecraftFolder}/libraries/{(string?)classifier["natives-windows"]?["path"]}",
                                         algorithm = "sha1"
                                     };
@@ -202,9 +204,9 @@ namespace SuikaiLauncher.Core.Minecraft {
                                     break;
                                 case Environments.OSType.Linux:
                                     Download.FileMetaData LnxLibMetaData = new(){
-                                        url = (string?)classifier["natives-linux"]?["url"],
-                                        hash = (string?)classifier["natives-linux"]?["sha1"],
-                                        size = (long?)classifier["natives-linux"]?["size"],
+                                        url = (string)classifier["natives-linux"]?["url"],
+                                        hash = (string)classifier["natives-linux"]?["sha1"],
+                                        size = (long)classifier["natives-linux"]?["size"],
                                         path = $"{Version.MinecraftFolder}/libraries/{(string?)classifier["natives-linux"]?["path"]}",
                                         algorithm = "sha1"
                                     };
@@ -212,9 +214,9 @@ namespace SuikaiLauncher.Core.Minecraft {
                                     break;
                                 case Environments.OSType.MacOS:
                                     Download.FileMetaData OsxLibMetaData = new(){
-                                        url = (string?)classifier["natives-osx"]?["url"],
-                                        hash = (string?)classifier["natives-osx"]?["sha1"],
-                                        size = (long?)classifier["natives-osx"]?["size"],
+                                        url = (string)classifier["natives-osx"]?["url"],
+                                        hash = (string)classifier["natives-osx"]?["sha1"],
+                                        size = (long)classifier["natives-osx"]?["size"],
                                         path = $"{Version.MinecraftFolder}/libaraies/{(string?)classifier["natives-osx"]?["path"]}",
                                         algorithm = "sha1"
                                     };
@@ -241,30 +243,30 @@ namespace SuikaiLauncher.Core.Minecraft {
                         // 根据 url 判断支持库适用的操作系统
                         if (artifact["url"].ToString().ContainsF("windows") && Environments.OSType.Windows == Environments.SystemType){
                             Download.FileMetaData NativeLib = new(){
-                                url = (string?)artifact["url"],
+                                url = (string)artifact["url"],
                                 path = $"{Version.MinecraftFolder}/libraries/{(string?)artifact["path"]}",
-                                hash = (string?)artifact["sha1"],
-                                size = (long?)artifact["size"],
+                                hash = (string)artifact["sha1"],
+                                size = (long)artifact["size"],
                                 algorithm = "sha1"
                             };
                             NativesLib.Add(NativeLib);
                         }
                         else if (artifact["url"].ToString().ContainsF("linux") && Environments.OSType.Linux == Environments.SystemType){
                             Download.FileMetaData NativeLib = new(){
-                                url = (string?)artifact["url"],
+                                url = (string)artifact["url"],
                                 path = $"{Version.MinecraftFolder}/libraries/{(string?)artifact["path"]}",
-                                hash = (string?)artifact["sha1"],
-                                size = (long?)artifact["size"],
+                                hash = (string)artifact["sha1"],
+                                size = (long)artifact["size"],
                                 algorithm = "sha1"
                             };
                             NativesLib.Add(NativeLib);
                         }
                         else if ((artifact["url"].ToString().ContainsF("osx") ||artifact["url"].ToString().ContainsF("macos")) && Environments.OSType.MacOS == Environments.SystemType){
                             Download.FileMetaData NativeLib = new(){
-                                url = (string?)artifact["url"],
+                                url = (string)artifact["url"],
                                 path = $"{Version.MinecraftFolder}/libraries/{(string?)artifact["path"]}",
-                                hash = (string?)artifact["sha1"],
-                                size = (long?)artifact["size"],
+                                hash = (string)artifact["sha1"],
+                                size = (long)artifact["size"],
                                 algorithm = "sha1"
                             };
                             NativesLib.Add(NativeLib);
@@ -272,20 +274,20 @@ namespace SuikaiLauncher.Core.Minecraft {
                         // 虽然不知道这是什么操作系统不过加了再说
                         else {
                             Download.FileMetaData NativeLib = new(){
-                                url = (string?)artifact["url"],
+                                url = (string)artifact["url"],
                                 path = $"{Version.MinecraftFolder}/libraries/{(string?)artifact["path"]}",
-                                hash = (string?)artifact["sha1"],
-                                size = (long?)artifact["size"],
+                                hash = (string)artifact["sha1"],
+                                size = (long)artifact["size"],
                                 algorithm = "sha1"
                             };
                             NativesLib.Add(NativeLib);
                         }
                     }
                     CommonLib.Add(new Download.FileMetaData(){
-                        url = (string?)artifact["url"],
+                        url = (string)artifact["url"],
                         path = $"{Version.MinecraftFolder}/libraries/{(string?)artifact["path"]}",
-                        hash = (string?)artifact["sha1"],
-                        size = (long?)artifact["size"],
+                        hash = (string)artifact["sha1"],
+                        size = (long)artifact["size"],
                         algorithm = "sha1"
                     });
                 }
@@ -306,10 +308,10 @@ namespace SuikaiLauncher.Core.Minecraft {
         public async static Task<List<Download.FileMetaData>> GetMinecraftAssets(JsonNode VersionJson,McVersion Version,bool CopyToResource) {
             List<Download.FileMetaData> DownloadList = new();
             string? VersionAssetsUrl = VersionJson["assetsIndex"]?["url"]?.ToString();
-            int? VersionAssetsSize = (int?)VersionJson["assetsIndex"]?["size"];
+            long VersionAssetsSize = (long)VersionJson["assetsIndex"]?["size"];
             string? VersionAssetsHash = VersionJson["assetsIndex"]?["sha1"]?.ToString();
             string? VersionAssetsIndex = VersionJson["assetsIndex"]?["id"]?.ToString();
-            if (VersionAssetsUrl.IsNullOrWhiteSpaceF() || VersionAssetsSize is not null || VersionAssetsHash.IsNullOrWhiteSpaceF()) throw new ArgumentException("无效的安装元数据");
+            if (VersionAssetsUrl.IsNullOrWhiteSpaceF() || VersionAssetsHash.IsNullOrWhiteSpaceF()) throw new ArgumentException("无效的安装元数据");
             string Result = await Download.NetGetFileByClient(new Download.FileMetaData()
             {
                 url = VersionAssetsUrl,
@@ -331,7 +333,7 @@ namespace SuikaiLauncher.Core.Minecraft {
                         path = (CopyToResource) ? $"{Version.MinecraftFolder}/resource/{Resource.Key}" : $"{Version.MinecraftFolder}/assets/{ResHash.Substring(0, 2)}/{ResHash}",
                         hash = ResHash,
                         algorithm = "sha1",
-                        size = (long?)Resource.Value["size"]
+                        size = (long)Resource.Value["size"]
                     });
                 }
                 return DownloadList;

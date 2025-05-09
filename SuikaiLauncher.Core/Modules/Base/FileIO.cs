@@ -22,7 +22,7 @@ namespace SuikaiLauncher.Core.Base{
         }
         public async static Task WriteData(Stream DataStream, string FilePath, bool Append)
         {
-            byte[] buffer = new byte[16384]; // 16KB 缓冲区
+            byte[] buffer = new byte[16384]; // 缓冲区
             try
             {
                 using (FileStream fileStream = new(FilePath, (Append) ? FileMode.Append : FileMode.Create))

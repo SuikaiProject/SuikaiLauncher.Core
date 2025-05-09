@@ -1,5 +1,6 @@
 ﻿using System.Text.RegularExpressions;
-
+using System.Text;
+using System.Diagnostics.CodeAnalysis;
 namespace SuikaiLauncher.Core.Override
 {
     public static class StringExtensions
@@ -16,7 +17,10 @@ namespace SuikaiLauncher.Core.Override
             if (IgnoreCase) return content.ToLower().Contains(value.ToLower());
             return content.Contains(value);
         }
-        public static bool IsNullOrWhiteSpaceF(this string? content){
+        /// <summary>
+        /// 验证字符串是否为空、<see langword="null"/> 或者只包含空格 
+        /// </summary>
+        public static bool IsNullOrWhiteSpaceF([NotNullWhen(false)] this string? content){
             return string.IsNullOrWhiteSpace(content);
         }
         /// <summary>
@@ -26,6 +30,11 @@ namespace SuikaiLauncher.Core.Override
         {
             return content.Substring(0, 1).ToUpper() + content.Substring(1, content.Length - 1).ToLower();
         }
+        /// <summary>
+        /// 正则表达式
+        /// </summary>
+        /// <param name="expression">表达式</param>
+        /// <returns>一个包含所有匹配文本的列表</returns>
         public static List<string> Regular(this string content,string expression){
             var Match = Regex.Matches(content,expression);
             List<string> Result = new();
@@ -33,6 +42,14 @@ namespace SuikaiLauncher.Core.Override
                 Result.Add(Value);
             }
             return Result;
+        }
+        public static string Base64Encode(this string? content){
+            if (content.IsNullOrWhiteSpaceF()) throw new NullReferenceException("");
+            return Convert.ToBase64String(Encoding.UTF8.GetBytes(content));
+        }
+        public static string Base64Decode(this string? content){
+            if (content.IsNullOrWhiteSpaceF()) throw new NullReferenceException("");
+            return Encoding.UTF8.GetString(Convert.FromBase64String(content));
         }
     }
 }
