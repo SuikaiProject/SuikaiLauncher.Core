@@ -12,7 +12,7 @@ namespace SuikaiLauncher.Core.Account{
     public class MinecraftYggdrasil{
         internal async Task<Tuple<bool,string>> YggdrasilAuthorize(string XSTSToken,string UserHash){
             JsonObject ReqData = new() {
-                ["JsonProperty"] = $"XBL3.0 x={XSTSToken};{UserHash}"
+                ["identityToken"] = $"XBL3.0 x={XSTSToken};{UserHash}"
             };
             HttpResponseMessage Response = await Network.NetworkRequest(
                 "https://api.minecraftservices.com/authentication/login_with_xbox",
