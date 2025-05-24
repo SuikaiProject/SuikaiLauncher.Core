@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "YIILQi7eND8=",
+  "success": true,
+  "projectFilePath": "C:\\ProgramData\\wuliaodexiaoluo\\code\\SuikaiLauncher.Core\\SuikaiLauncher.Core.Base\\SuikaiLauncher.Core.Base.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\wuliaodexiaoluo\\.nuget\\packages\\downloader\\3.3.4\\downloader.3.3.4.nupkg.sha512",
+    "C:\\Users\\wuliaodexiaoluo\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\8.0.1\\microsoft.extensions.dependencyinjection.abstractions.8.0.1.nupkg.sha512",
+    "C:\\Users\\wuliaodexiaoluo\\.nuget\\packages\\microsoft.extensions.logging.abstractions\\8.0.1\\microsoft.extensions.logging.abstractions.8.0.1.nupkg.sha512"
+  ],
+  "logs": []
+}

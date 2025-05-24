@@ -1,0 +1,13 @@
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Base\obj\Debug\net8.0\SuikaiLauncher.Core.Base.GeneratedMSBuildEditorConfig.editorconfig
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Base\obj\Debug\net8.0\SuikaiLauncher.Core.Base.AssemblyInfoInputs.cache
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Base\obj\Debug\net8.0\SuikaiLauncher.Core.Base.AssemblyInfo.cs
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Base\obj\Debug\net8.0\SuikaiLauncher.Core.Base.csproj.CoreCompileInputs.cache
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Base\obj\Debug\net8.0\SuikaiLauncher.Core.Base.sourcelink.json
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Base\obj\Debug\net8.0\SuikaiLauncher.Core.Base.csproj.AssemblyReference.cache
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Base\bin\Debug\net8.0\SuikaiLauncher.Core.Base.deps.json
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Base\bin\Debug\net8.0\SuikaiLauncher.Core.Base.dll
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Base\bin\Debug\net8.0\SuikaiLauncher.Core.Base.pdb
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Base\obj\Debug\net8.0\SuikaiLauncher.Core.Base.dll
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Base\obj\Debug\net8.0\refint\SuikaiLauncher.Core.Base.dll
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Base\obj\Debug\net8.0\SuikaiLauncher.Core.Base.pdb
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Base\obj\Debug\net8.0\ref\SuikaiLauncher.Core.Base.dll

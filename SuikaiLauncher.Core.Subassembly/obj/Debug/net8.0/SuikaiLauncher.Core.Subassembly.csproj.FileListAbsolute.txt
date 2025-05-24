@@ -1,0 +1,16 @@
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Subassembly\obj\Debug\net8.0\SuikaiLauncher.Core.Subassembly.GeneratedMSBuildEditorConfig.editorconfig
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Subassembly\obj\Debug\net8.0\SuikaiLauncher.Core.Subassembly.AssemblyInfoInputs.cache
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Subassembly\obj\Debug\net8.0\SuikaiLauncher.Core.Subassembly.AssemblyInfo.cs
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Subassembly\obj\Debug\net8.0\SuikaiLauncher.Core.Subassembly.csproj.CoreCompileInputs.cache
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Subassembly\obj\Debug\net8.0\SuikaiLauncher.Core.Subassembly.sourcelink.json
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Subassembly\bin\Debug\net8.0\SuikaiLauncher.Core.Subassembly.deps.json
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Subassembly\bin\Debug\net8.0\SuikaiLauncher.Core.Subassembly.dll
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Subassembly\bin\Debug\net8.0\SuikaiLauncher.Core.Subassembly.pdb
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Subassembly\bin\Debug\net8.0\SuikaiLauncher.Core.Base.dll
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Subassembly\bin\Debug\net8.0\SuikaiLauncher.Core.Base.pdb
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Subassembly\obj\Debug\net8.0\SuikaiLauncher.Core.Subassembly.csproj.AssemblyReference.cache
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Subassembly\obj\Debug\net8.0\SuikaiLa.E441DEF8.Up2Date
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Subassembly\obj\Debug\net8.0\SuikaiLauncher.Core.Subassembly.dll
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Subassembly\obj\Debug\net8.0\refint\SuikaiLauncher.Core.Subassembly.dll
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Subassembly\obj\Debug\net8.0\SuikaiLauncher.Core.Subassembly.pdb
+C:\ProgramData\wuliaodexiaoluo\code\SuikaiLauncher.Core\SuikaiLauncher.Core.Subassembly\obj\Debug\net8.0\ref\SuikaiLauncher.Core.Subassembly.dll
