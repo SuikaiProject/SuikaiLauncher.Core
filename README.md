@@ -23,7 +23,7 @@
 
 ## 运行环境要求
 
-.NET 6.0 或更高版本
+.NET 8.0 或更高版本
 
 ## 特别鸣谢
 
@@ -34,3 +34,11 @@
 [z0z0r4](https://github.com/z0z0r4)：提供了 Mod 简介的翻译 API。
 
 [bangbang93](https://github.com/bangbang93)：提供了 BMCLAPI 下载源和 Forge 安装工具。
+
+
+## 法律声明
+
+>[!WARNING]
+> ## 非 Minecraft 官方产品，未经 Mojang 或 Microsoft 批准，也不与 Mojang 或 Microsoft 关联。
+>
+> ## Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.
