@@ -1,144 +1,141 @@
-
 namespace SuikaiLauncher.Core.Minecraft.JsonModels
 {
     public class VersionList
     {
-        public required VersionLatest latest;
-        public required List<Version> versions;
+        public required VersionLatest latest { get; set; }
+        public required List<Version> versions { get; set; }
     }
 
     public class VersionLatest
     {
-        public required string release;
-        public required string snapshot;
+        public required string release { get; set; }
+        public required string snapshot { get; set; }
     }
+
     public class Version
     {
-        public required string id;
-        public required string type;
-        public required string url;
-        public required string time;
-        public required string releaseTime;
-        public string? sha1;
-        public int? complianceLevel;
+        public required string id { get; set; }
+        public required string type { get; set; }
+        public required string url { get; set; }
+        public required string time { get; set; }
+        public required string releaseTime { get; set; }
+        public string? sha1 { get; set; }
+        public int? complianceLevel { get; set; }
     }
 
     public class VersionJson
     {
-        public Arguments? arguments;
-        public required AssetsIndex assetsIndex;
-        public string? assets;
-        public int? complianceLevel;
-        public required MainDownloads downloads;
-        public string? id;
-        public JavaVersion? javaVersion;
-        public required List<Downloads> libraries;
-        public required Logging logging;
-        public required string mainClass;
-        public required string minimumLauncherVersiom;
-        public required string releaseTime;
-        public required string time;
-        public required string type;
+        public Arguments? arguments { get; set; }
+        public required AssetIndex assetIndex { get; set; }
+        public string? assets { get; set; }
+        public int? complianceLevel { get; set; }
+        public required Dictionary<string, DownloadMeta> downloads { get; set; }
+        public string? id { get; set; }
+        public JavaVersion? javaVersion { get; set; }
+        public required List<Library> libraries { get; set; }
+        public required Logging logging { get; set; }
+        public required string mainClass { get; set; }
+        public string? minecraftArguments { get; set; }
+        public required int minimumLauncherVersion { get; set; }
+        public required string releaseTime { get; set; }
+        public required string time { get; set; }
+        public required string type { get; set; }
     }
 
     public class Arguments
     {
-        public required dynamic game;
+        public required dynamic game { get; set; }
     }
 
-    public class AssetsIndex
+    public class AssetIndex
     {
-        public required string id;
-        public required string sha1;
-        public required long size;
-        public required long totalSize;
-        public required string url;
+        public required string id { get; set; }
+        public required string sha1 { get; set; }
+        public required long size { get; set; }
+        public required long totalSize { get; set; }
+        public required string url { get; set; }
     }
 
     public class DownloadMeta
     {
-        public required string sha1;
-        public required long size;
-        public required string url;
+        public required string sha1 { get; set; }
+        public required long size { get; set; }
+        public required string url { get; set; }
     }
 
-
-    public class MainDownloads
-    {
-        public required DownloadMeta client;
-        public DownloadMeta? client_mapping;
-        public DownloadMeta? server;
-        public DownloadMeta? server_mapping;
-    }
     public class JavaVersion
     {
-        public string? component;
-        public int? mojarVersion;
+        public string? component { get; set; }
+        public int? majorVersion { get; set; }
     }
-    public class Downloads
-    {
-        public required Artifact artifact;
-        public dynamic? classifiers;
-        public dynamic? natives;
-        public Extract? extract;
-        public List<Rules?>? rules;
 
+    public class Library
+    {
+        public required string name { get; set; }
+        public required LibraryDownloads downloads { get; set; }
+        public List<Rule>? rules { get; set; }
+        public dynamic? natives { get; set; }
+        public Extract? extract { get; set; }
     }
+
+    public class LibraryDownloads
+    {
+        public Artifact? artifact { get; set; }
+        public Dictionary<string, Artifact>? classifiers { get; set; }
+    }
+
     public class Artifact
     {
-        public required string path;
-        public required string sha1;
-        public required long size;
-        public required string url;
+        public required string path { get; set; }
+        public required string sha1 { get; set; }
+        public required long size { get; set; }
+        public required string url { get; set; }
     }
 
-    public class Native
-    {
-        public required string path;
-        public required string sha1;
-        public required long size;
-        public required string url;
-    }
     public class Extract
     {
-        public required List<string> exclude;
+        public required List<string> exclude { get; set; }
     }
 
-    public class Rules
+    public class Rule
     {
-        public required string action;
-        public Os? os;
+        public required string action { get; set; }
+        public Os? os { get; set; }
     }
+
     public class Os
     {
-        public required string name;
+        public required string name { get; set; }
     }
 
     public class Logging
     {
-        public required ClientLogging client;
-    }
-    public class ClientLogging
-    {
-        public required string argument;
-        public required Logging file;
-        public required string type;
-    }
-    public class LoggingFile
-    {
-        public required string id;
-        public required string sha1;
-        public required long size;
-        public required string url;
-    }
-    public class FileInfo
-    {
-        public required string hash;
-        public required long size;
-    }
-    public class Objects
-    {
-        public required Dictionary<string, FileInfo> objects;
+        public required ClientLogging client { get; set; }
     }
 
+    public class ClientLogging
+    {
+        public required string argument { get; set; }
+        public required LoggingFile file { get; set; }
+        public required string type { get; set; }
+    }
+
+    public class LoggingFile
+    {
+        public required string id { get; set; }
+        public required string sha1 { get; set; }
+        public required long size { get; set; }
+        public required string url { get; set; }
+    }
+
+    public class FileInfo
+    {
+        public required string hash { get; set; }
+        public required long size { get; set; }
+    }
+
+    public class Objects
+    {
+        public required Dictionary<string, FileInfo> objects { get; set; }
+    }
 }
