@@ -1,16 +1,95 @@
-using SuikaiLauncher.Core.Base;
+#pragma warning disable SYSLIB0014
 using SuikaiLauncher.Core.Override;
 using System.Net;
 
-namespace SuikaiLauncher.Core
+namespace SuikaiLauncher.Core.Base
 {
+    
+    public class HttpProxy : IWebProxy
+    {
+        public ICredentials? Credentials { get; set; }
+        private IWebProxy SystemProxy = HttpClient.DefaultProxy;
+        private WebProxy? CurrentProxy;
+        public object ProxyChangeLock = new object[1];
+        public bool RequiredReloadProxyServer;
+        public bool UseSystemProxy = true;
+        public string? ProxyAddress;
+        public Uri? GetProxy(Uri RequestHost)
+        {
+            return GetProxy(RequestHost.AbsoluteUri)?.Address;
+        }
+        public WebProxy? GetProxy(string Host)
+        {
+            try
+            {
+                Logger.Log("Success!");
+                WebProxy CurrentSystemProxy = new WebProxy(SystemProxy.GetProxy(new Uri(Host)), true);
+                if (CurrentProxy is not null && !RequiredReloadProxyServer) return CurrentProxy;
+                if (RequiredReloadProxyServer)
+                {
+                    Logger.Log("[Network] 已要求刷新代理配置，开始重载代理配置");
+                    if (UseSystemProxy && ProxyAddress.IsNullOrWhiteSpaceF())
+                    {
+                        Logger.Log("[Network] 当前代理配置：跟随系统代理设置");
+                        lock (ProxyChangeLock)
+                        {
+                            CurrentProxy = CurrentSystemProxy;
+                            RequiredReloadProxyServer = false;
+                        }
+                    }
+                    else if (!UseSystemProxy && !ProxyAddress.IsNullOrWhiteSpaceF())
+                    {
+                        Logger.Log("[Network] 当前代理配置：自定义");
+                        lock (ProxyChangeLock)
+                        {
+                            CurrentProxy = new WebProxy(ProxyAddress, true);
+                            RequiredReloadProxyServer = false;
+                        }
+                    }
+                    else
+                    {
+                        // 直接返回
+                        Logger.Log("[Network] 当前代理配置：禁用");
+                        return null;
+                    }
+                    return CurrentProxy;
+                }
+                return null;
+            }
+            catch (UriFormatException)
+            {
+                Logger.Log("[Network] 检测到可能错误的配置，已清空自定义代理配置并使用默认值。");
+                ProxyAddress = null;
+                return CurrentProxy;
+            }
+        }
+        public bool IsBypassed(Uri RequestUri)
+        {
+            return CurrentProxy?.GetProxy(RequestUri) == RequestUri;
+        }
+    }
     public class Network
     {
-        private static readonly HttpClientHandler clientHandler = new HttpClientHandler() { AllowAutoRedirect = false };
+        public static readonly HttpProxy Proxy = new();
+        private static readonly HttpClientHandler clientHandler = new HttpClientHandler()
+        {
+            AllowAutoRedirect = SetupServicePoint(),
+            ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, certChain, sslPolicyError) =>
+            {
+                if (sslPolicyError != System.Net.Security.SslPolicyErrors.None && !IgnoreSslError)
+                {
+                    return false;
+                }
+                return true;
+            },
+            UseProxy = true,
+            Proxy = Proxy,
+            AutomaticDecompression = DecompressionMethods.All
+        };
         private static readonly HttpClient Client = new HttpClient(clientHandler);
         private const string LauncherUA = "SuikaiLauncher.Core/0.0.2";
         private const string BrowserUA = "SuikaiLauncher.Core/0.0.2 Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:137.0) Gecko/20100101 Firefox/137.0";
-
+        public static bool IgnoreSslError = false;
         public async static Task<HttpResponseMessage> NetworkRequest(
             string url,
             Dictionary<string, string>? headers = null,
@@ -22,6 +101,7 @@ namespace SuikaiLauncher.Core
             int retry = 5,
             CancellationToken? Token = null)
         {
+
             int redirectLimit = 20;
             List<string> redirectHistory = new() { url };
             HttpClient httpClient = Client;
@@ -53,6 +133,7 @@ namespace SuikaiLauncher.Core
 
             string currentUrl = url;
             HttpRequestMessage request = MakeRequest(currentUrl);
+
             CancellationToken cts;
             if (Token is not null)
             {
@@ -66,8 +147,8 @@ namespace SuikaiLauncher.Core
             {
                 try
                 {
-                    
-                        var response = await httpClient.SendAsync(request, cts);
+
+                    var response = await httpClient.SendAsync(request, cts);
 
                     int status = (int)response.StatusCode;
                     if (status >= 300 && status < 400 && response.Headers.Location != null)
@@ -106,6 +187,76 @@ namespace SuikaiLauncher.Core
             }
 
             throw new TaskCanceledException("发送请求失败");
+        }
+        private static bool SetupServicePoint()
+        {
+            ServicePointManager.DefaultConnectionLimit = int.MaxValue;
+            ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) =>
+            {
+                if (sslPolicyErrors != System.Net.Security.SslPolicyErrors.None && !IgnoreSslError)
+                {
+                    return false;
+                }
+                return true;
+            };
+            return false;
+        }
+        public async static Task<WebResponse> Request(
+            string url,
+            Dictionary<string, string>? Headers = null,
+            string Method = "GET",
+            byte[]? ReqData = null,
+            int timeout = 250000,
+            string UserAgent = "",
+            string ContentType = "application/json",
+            string Accept = "*/*",
+            bool useBrowserUA = false,
+            int Retry = 5,
+            CancellationToken? Token = null
+            )
+        {
+        Retry:
+            try
+            {
+                if (Token is not null) Token.Value.Register(() => throw new TaskCanceledException("操作已取消"));
+                HttpWebRequest Request = (HttpWebRequest)HttpWebRequest.Create(url);
+                Request.KeepAlive = true;
+                if (Headers is not null)
+                {
+                    foreach (var Header in Headers)
+                    {
+                        Request.Headers.Add(Header.Key, Header.Value);
+                    }
+                }
+                Request.ProtocolVersion = HttpVersion.Version11;
+                Request.Method = Method.ToUpper();
+                Request.Timeout = timeout;
+                Request.Proxy = Proxy.GetProxy(url);
+                if (ReqData is not null)
+                {
+                    Request.ContentType = ContentType;
+                    Request.Accept = Accept;
+                    using (Stream ReqStream = Request.GetRequestStream())
+                    {
+                        await ReqStream.WriteAsync(ReqData, 0, ReqData.Length);
+                    }
+                    Request.ContentLength = ReqData.Length;
+                }
+                if (useBrowserUA) Request.UserAgent = BrowserUA;
+                else if (!UserAgent.IsNullOrWhiteSpaceF()) Request.UserAgent = UserAgent;
+                else Request.UserAgent = LauncherUA;
+                return Request.GetResponse();
+            }
+            catch (WebException ex)
+            {
+                if (ex.Status == WebExceptionStatus.Timeout && Retry > 0)
+                {
+                    Retry--;
+                    goto Retry;
+                }
+                if (ex.Response is null) throw;
+                return ex.Response;
+            }
         }
     }
 
