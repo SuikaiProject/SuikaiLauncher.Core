@@ -12,20 +12,22 @@
 
 目前暂时只提供 GitHub Raw 的调用方式。
 
+未来可能会提供 GitHub Page 等镜像源。
+
 ## JRE/JDK/.NET Runtime
 
-```
+```http
 GET https://raw.githubusercontent.com/SuikaiProject/SuikaiLauncher.Core/refs/heads/update/resources.json
 ```
 
 ## SuikaiLauncher.Core Update API
 
-```
+```http
 GET https://raw.githubusercontent.com/SuikaiProject/SuikaiLauncher.Core/refs/heads/update/update.json
 ```
 
 ## SuikaiLauncher.Core Version API
 
-```
+```http
 GET https://raw.githubusercontent.com/SuikaiProject/SuikaiLauncher.Core/refs/heads/update/versions.json
 ```
