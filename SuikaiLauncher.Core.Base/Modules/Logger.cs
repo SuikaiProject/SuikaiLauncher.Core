@@ -1,9 +1,4 @@
-﻿using System.Threading;
-using System.Text;
-using System.Security;
-using System.Runtime.CompilerServices;
-
-namespace SuikaiLauncher.Core { 
+﻿namespace SuikaiLauncher.Core { 
     public class Logger
     {
         private readonly static object LogOutputLock = new object[1];
@@ -38,6 +33,10 @@ namespace SuikaiLauncher.Core {
         {
             return DateTime.Now.ToString("HH:mm:ss.fff");
         }
+        public static void Crash()
+        {
+            throw new Exception("测试异常");
+        }
         public static void Log(string message)
         {
             lock (LogOutputLock)
@@ -51,7 +50,7 @@ namespace SuikaiLauncher.Core {
         {
             lock (LogOutputLock)
             {
-                string output = $"[{getCurrentTime()}] {message}:" + GetExceptionDetail(ex, true);
+                string output = $"[{getCurrentTime()}] | {message}:" + GetExceptionDetail(ex, true);
                 if (DebugMode) Console.WriteLine(output);
                 LogText.Add(output);
             }

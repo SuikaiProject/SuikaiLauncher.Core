@@ -1,4 +1,4 @@
-#pragma warning disable SYSLIB0014
+﻿#pragma warning disable SYSLIB0014
 using SuikaiLauncher.Core.Override;
 using System.Net;
 

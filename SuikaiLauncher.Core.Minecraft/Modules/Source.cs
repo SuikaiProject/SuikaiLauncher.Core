@@ -1,4 +1,4 @@
-﻿using SuikaiLauncher.Core.Minecraft;
+﻿using SuikaiLauncher.Core.Base;
 using SuikaiLauncher.Core.Override;
 
 namespace SuikaiLauncher.Core.Minecraft
@@ -10,14 +10,14 @@ namespace SuikaiLauncher.Core.Minecraft
         public static bool PerferOfficial = true;
         public static string GetResourceDownloadSource(string hash)
         {
-            if (PerferOfficial) return MinecraftVersionListSource.Mojang.resource + $"/{hash.Substring(0, 2)}/{hash}";
+            if (PerferOfficial) return VersionList.Mojang.resource + $"/{hash.Substring(0, 2)}/{hash}";
             double RandomCount = Selector.NextDouble();
             if (RandomCount < 0.5)
             {
-                return MinecraftVersionListSource.BMCLAPI.resource + $"/{hash.Substring(0, 2)}/{hash}";
+                return VersionList.BMCLAPI.resource + $"/{hash.Substring(0, 2)}/{hash}";
             }
             
-            return MinecraftVersionListSource.Mojang.resource + $"/{hash.Substring(0, 2)}/{hash}";
+            return VersionList.Mojang.resource + $"/{hash.Substring(0, 2)}/{hash}";
             
         }
         public static string GetLibraryDownloadSource(string url)

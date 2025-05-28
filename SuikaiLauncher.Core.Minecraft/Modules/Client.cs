@@ -6,12 +6,14 @@ using SuikaiLauncher.Core.Runtime.Java;
 using SuikaiLauncher.Core.Override;
 using SuikaiLauncher.Core.Base;
 using SuikaiLauncher.Core.Minecraft.JsonModels;
+using SuikaiLauncher.Core.Time;
 
-namespace SuikaiLauncher.Core.Minecraft {
+namespace SuikaiLauncher.Core.Minecraft
+{
     /// <summary>
     /// 加载器类型
     /// </summary>
-    
+
     /// <summary>
     /// 版本类型
     /// </summary>
@@ -32,7 +34,7 @@ namespace SuikaiLauncher.Core.Minecraft {
         public string? OptiFineVersion { get; set; }
         public string? LiteLoaderVersion { get; set; }
     }
-     
+
     /// <summary>
     /// 版本源数据
     /// </summary>
@@ -57,11 +59,11 @@ namespace SuikaiLauncher.Core.Minecraft {
         /// <summary>
         /// 附加组件信息
         /// </summary>
-        public Subassembly? SubassemblyMeta { get ; set; }
+        public Subassembly? SubassemblyMeta { get; set; }
         /// <summary>
         /// 安装此版本的 Minecraft 文件夹
         /// </summary>
-        public required string MinecraftFolder {get;set;}
+        public required string MinecraftFolder { get; set; }
         /// <summary>
         /// 版本 Json 文件 Hash
         /// </summary>
@@ -80,16 +82,36 @@ namespace SuikaiLauncher.Core.Minecraft {
         /// 根据版本号查找对应的版本
         /// </summary>
         /// <returns>一个 bool 用于指示是否查找到对应版本</returns>
-        public bool Lookup()
+        public static McVersion Lookup()
         {
-            return false;
+            return new McVersion()
+            {
+                Version = "",
+                VersionName = "",
+                JsonUrl = "",
+                MinecraftFolder = "",
+                InstallFolder = ""
+            };
         }
         /// <summary>
         /// 根据版本名称查找本地版本
         /// </summary>
-        /// <returns>一个 bool 用于指示是否在本地找到此版本</returns>
-        public bool LocalLookup(){
-            return false;
+        /// <returns>McVersion</returns>
+        public static McVersion LocalLookup()
+        {
+            return new McVersion()
+            {
+                Version = "",
+                VersionName = "",
+                JsonUrl = "",
+                MinecraftFolder = "",
+                InstallFolder = ""
+            };
+        }
+        public void CorrectionPath()
+        {
+            this.MinecraftFolder = this.MinecraftFolder.Replace("\\", "/");
+            this.InstallFolder = this.InstallFolder.Replace("\\", "/");
         }
 
     }
@@ -98,247 +120,328 @@ namespace SuikaiLauncher.Core.Minecraft {
     /// </summary>
     public class Client
     {
-        
-        public async static void InstallRequest(McVersion Version)
+        /// <summary>
+        /// 安装请求，用于下载和安装 Minecraft 客户端。
+        /// </summary>
+        /// <param name="Version">要安装的 Minecraft 版本信息。</param>
+        /// <exception cref="TaskCanceledException">当版本已存在时抛出。</exception>
+        /// <exception cref="InvalidDataException">当版本 Json 结构无效时抛出。</exception>
+        public async static Task Install(McVersion Version)
         {
-            string? RawJson;
-            VersionJson VersionJson;
-            List<Download.FileMetaData> DownloadList =new();
-            // 基本参数检查（版本已存在或者关键参数为空或 null）
-            if (Version.VersionName.IsNullOrWhiteSpaceF()) Version.VersionName = Version.Version;
-            if (Directory.Exists($"{Version.MinecraftFolder}/versions/{Version.VersionName}") && File.Exists($"{Version.MinecraftFolder}/versions/{Version.VersionName}/{Version.VersionName}.json")) throw new TaskCanceledException("版本已存在");
-            if (Version.MinecraftFolder.EndsWith("/")) Version.MinecraftFolder = Version.MinecraftFolder.TrimEnd('/');
+            var t1 = Time.Time.getCurrentTime();
+            // 基本参数检查
+            if (Directory.Exists(Version.InstallFolder) && File.Exists($"{Version.InstallFolder}/{Version.VersionName}.json"))
+            {
+                throw new TaskCanceledException("版本已存在");
+            }
+            Version.CorrectionPath();
+            if (Version.MinecraftFolder.EndsWith("/"))
+            {
+                Version.MinecraftFolder = Version.MinecraftFolder.TrimEnd('/');
+            }
             Logger.Log($"[Minecraft] 开始安装 Minecraft {Version.Version}");
             Logger.Log("[Minecraft] ========== 核心元数据 ==========");
             Logger.Log($"[Minecraft] 核心名称：{Version.VersionName}");
             Logger.Log($"[Minecraft] 版本：{Version.Version}");
             Logger.Log($"[Minecraft] 版本类型：{Enum.GetName(Version.Type)}");
-            Logger.Log($"[Minecraft] 可安装 Mod： {Version.SubassemblyMeta is not null}");
-            Logger.Log($"[Minecraft] 要求的 Java 版本： {( (Version.RequireJava is not null) ? $"Java {Version.RequireJava.MojarVersion}":"未指定" )}");
+            Logger.Log($"[Minecraft] 可安装 Mod： {(Version.SubassemblyMeta is not null ? "是" : "否")}");
+            Logger.Log($"[Minecraft] 要求的 Java 版本： {((Version.RequireJava is not null) ? $"Java {Version.RequireJava.MojarVersion}" : "未指定")}");
             Logger.Log($"[Minecraft] 安装路径：{Version.InstallFolder}");
-            Logger.Log("[Minecraft] ===========================");
-            
-            RawJson = await DownloadVersionJson(Version);
-            VersionJson = Json.GetJson<VersionJson>(RawJson);
-            if (VersionJson is null) throw new InvalidDataException();
-            Tuple<List<Download.FileMetaData>,List<Download.FileMetaData>> MetaData = await GetMinecraftLib(VersionJson,Version,RawJson.ContainsF("classifiers"));
-            DownloadList.AddRange(MetaData.Item1);
-            DownloadList.AddRange(MetaData.Item2);
-            DownloadList.AddRange(await GetMinecraftAssets(VersionJson,Version,Version.Type == VersionType.Old));
-            if (!VersionJson.downloads.ToString().IsNullOrWhiteSpaceF())
+            Logger.Log("[Minecraft] ================================");
+
+            string rawJson = await DownloadVersionJson(Version);
+
+
+
+            VersionJson versionJson = Json.GetJson<VersionJson>(rawJson);
+            if (versionJson is null)
             {
-                DownloadList.Add(new Download.FileMetaData()
+                throw new InvalidDataException("版本 Json 结构无效");
+            }
+
+            List<Download.FileMetaData> downloadList = new();
+
+            // 获取 Minecraft 库文件下载列表
+            Tuple<List<Download.FileMetaData>, List<Download.FileMetaData>> libMetaData = await GetMinecraftLib(versionJson, Version, rawJson.ContainsF("classifiers"));
+            downloadList.AddRange(libMetaData.Item1); // Natives libraries
+            downloadList.AddRange(libMetaData.Item2); // Common libraries
+
+            // 获取 Minecraft 资源文件下载列表
+            downloadList.AddRange(await GetMinecraftAssets(versionJson, Version, Version.Type == VersionType.Old));
+
+            // 添加客户端 Jar 文件下载
+            if (!versionJson.downloads.ToString().IsNullOrWhiteSpaceF() && versionJson.downloads["client"] != null)
+            {
+                downloadList.Add(new Download.FileMetaData()
                 {
-                    url = VersionJson.downloads.client.url,
+                    url = versionJson.downloads["client"].url,
                     path = $"{Version.InstallFolder}/{Version.VersionName}.jar",
-                    hash = VersionJson.downloads.client.sha1,
+                    hash = versionJson.downloads["client"].sha1,
                     algorithm = "sha1",
-                    size = VersionJson.downloads.client.size
+                    size = versionJson.downloads["client"].size
                 });
             }
-            // Download.Start(DownloadList);
-            
+
+            await Download.NetCopyFileAsync(downloadList);
+            Logger.Log($"[Minecraft] 安装结束：耗时 {Time.Time.getCurrentTime() - t1}");
         }
-        public async static Task<string?> DownloadVersionJson(McVersion Version,bool RequireOutputOnly = false)
+
+        /// <summary>
+        /// 下载版本 Json 文件。
+        /// </summary>
+        /// <param name="Version">Minecraft 版本信息。</param>
+        /// <param name="RequireOutputOnly">是否只返回 Json 内容而不写入文件。</param>
+        /// <returns>下载的 Json 字符串内容。</returns>
+        public async static Task<string> DownloadVersionJson(McVersion Version, bool RequireOutputOnly = false)
         {
-            Directory.CreateDirectory(Version.InstallFolder + $"{Version.VersionName}.json");
-            HttpResponseMessage Result = await Network.NetworkRequest(Version.JsonUrl);
-            string DlResult = await FileIO.ReadAsString(Result);
+            Directory.CreateDirectory(Version.InstallFolder);
+            HttpResponseMessage result = await Network.NetworkRequest(Version.JsonUrl);
+            string dlResult = await FileIO.ReadAsString(result);
+
             if (!RequireOutputOnly)
             {
-                    await FileIO.WriteData(new MemoryStream(Encoding.UTF8.GetBytes(DlResult)),Version.InstallFolder + $"/{Version.VersionName}.json");
+                await FileIO.WriteData(new MemoryStream(Encoding.UTF8.GetBytes(dlResult)), $"{Version.InstallFolder}/{Version.VersionName}.json", false);
             }
-            return DlResult;
-            
+            return dlResult;
         }
-        public async static Task<Tuple<List<Download.FileMetaData>,List<Download.FileMetaData>>> GetMinecraftLib(VersionJson VersionJson,McVersion Version,bool OldVersionInstallMethod = false) 
+
+        /// <summary>
+        /// 获取 Minecraft 库文件下载列表。
+        /// </summary>
+        /// <param name="VersionJson">版本 Json 对象。</param>
+        /// <param name="Version">Minecraft 版本信息。</param>
+        /// <param name="OldVersionInstallMethod">是否使用旧版本安装方法（基于 classifiers 字段）。</param>
+        /// <returns>包含 CommonLib 和 NativesLib 的元数据列表的元组。</returns>
+        /// <exception cref="InvalidDataException">当 Json 结构无效时抛出。</exception>
+        /// <exception cref="NotImplementedException">当遇到不支持的平台时抛出。</exception>
+        /// <exception cref="Exception">其他获取支持库列表失败的异常。</exception>
+        public async static Task<Tuple<List<Download.FileMetaData>, List<Download.FileMetaData>>> GetMinecraftLib(VersionJson VersionJson, McVersion Version, bool OldVersionInstallMethod = false)
         {
-            List<Download.FileMetaData> CommonLib = new();
-            List<Download.FileMetaData> NativesLib = new();
+        
+            List<Download.FileMetaData> commonLib = new();
+            List<Download.FileMetaData> nativesLib = new();
             try
             {
-                // 旧版本的 classifiers 键新版本没有，为了避免合并安装方法导致的 Bug 和额外工作量，所以拎出来单独写
                 if (OldVersionInstallMethod)
                 {
-                    foreach(Downloads libaray in VersionJson.libraries)
+                    if (VersionJson is null) Logger.Crash();
+                    foreach (var library in VersionJson!.libraries)
                     {
-                        var artifact = libaray.artifact;
-                        var classifier = libaray.classifiers;
+                        Logger.Log((library is null).ToString());
+                        Logger.Log((library is null).ToString());
+                        if (library?.downloads.artifact is null) continue; // 确保artifact存在
 
-                        Download.FileMetaData MetaData = new()
+                        var artifact = library.downloads.artifact;
+                        var classifiers = library.downloads.classifiers;
+
+                        commonLib.Add(new Download.FileMetaData()
                         {
                             url = artifact.url,
                             hash = artifact.sha1,
                             algorithm = "sha1",
                             path = $"{Version.MinecraftFolder}/libraries/{artifact.path}".Replace("\\", "/"),
                             size = artifact.size
-                        };
-                        if (classifier is not null){
+                        });
+
+                        if (classifiers != null)
+                        {
                             // 根据不同操作系统决定要下载的支持库
-                            switch (Environments.SystemType){
+                            string? nativeUrl = null;
+                            string? nativeHash = null;
+                            long nativeSize = 0;
+                            string? nativePath = null;
+
+                            switch (Environments.SystemType)
+                            {
                                 case Environments.OSType.Windows:
-                                    if (Environments.SystemArch == System.Runtime.InteropServices.Architecture.X86)
+
+
+                                    if (classifiers.ToString().ContainsF("natives-windows"))
                                     {
-                                        Download.FileMetaData WinLibMetaData = new()
+                                        if (classifiers.ContainsKey("natives-windows-32") && Environments.SystemArch == System.Runtime.InteropServices.Architecture.X86)
                                         {
-                                            url = classifier,
-                                            hash = classifier["native-windows"].sha1,
-                                            size = classifier["native-windows"].size,
-                                            path = $"{Version.MinecraftFolder}/libraries/{classifier["native-windows"].path}",
-                                            algorithm = "sha1"
-                                        };
-                                        NativesLib.Add(WinLibMetaData);
+                                            var nativeWin = classifiers["natives-windows-32"];
+                                            nativeUrl = nativeWin.url;
+                                            nativeHash = nativeWin.sha1;
+                                            nativeSize = nativeWin.size;
+                                            nativePath = nativeWin.path;
+
+                                        }
+                                        else if (classifiers.ContainsKey("natives-windows-64") && Environments.SystemArch == System.Runtime.InteropServices.Architecture.X64)
+                                        {
+                                            var nativeWin = classifiers["natives-windows-64"];
+                                            nativeUrl = nativeWin.url;
+                                            nativeHash = nativeWin.sha1;
+                                            nativeSize = nativeWin.size;
+                                            nativePath = nativeWin.path;
+                                        }
+                                        else
+                                        {
+                                            var nativeWin = classifiers["natives-windows"];
+                                            nativeUrl = nativeWin.url;
+                                            nativeHash = nativeWin.sha1;
+                                            nativeSize = nativeWin.size;
+                                            nativePath = nativeWin.path;
+                                        }
+                                            
                                     }
+                                    
                                     break;
                                 case Environments.OSType.Linux:
-                                    Download.FileMetaData LnxLibMetaData = new(){
-                                        url = classifier["natives-linux"].url,
-                                        hash = classifier["natives-linux"].sha1,
-                                        size = classifier["natives-linux"].size,
-                                        path = $"{Version.MinecraftFolder}/libraries/{(string?)classifier["natives-linux"].path}",
-                                        algorithm = "sha1"
-                                    };
-                                    NativesLib.Add(LnxLibMetaData);
+                                    if (classifiers.ContainsKey("natives-linux"))
+                                    {
+                                        var nativeLnx = classifiers["natives-linux"];
+                                        nativeUrl = nativeLnx.url;
+                                        nativeHash = nativeLnx.sha1;
+                                        nativeSize = nativeLnx.size;
+                                        nativePath = nativeLnx.path;
+                                    }
                                     break;
                                 case Environments.OSType.MacOS:
-                                    Download.FileMetaData OsxLibMetaData = new(){
-                                        url = classifier["natives-osx"].url,
-                                        hash = classifier["natives-osx"].sha1,
-                                        size = classifier["natives-osx"].size,
-                                        path = $"{Version.MinecraftFolder}/libaraies/{classifier["natives-osx"].path}",
-                                        algorithm = "sha1"
-                                    };
-                                    NativesLib.Add(OsxLibMetaData);
+                                    if (classifiers.ContainsKey("natives-osx"))
+                                    {
+                                        var nativeOsx = classifiers["natives-osx"];
+                                        nativeUrl = nativeOsx.url;
+                                        nativeHash = nativeOsx.sha1;
+                                        nativeSize = nativeOsx.size;
+                                        nativePath = nativeOsx.path;
+                                    }
                                     break;
-                                    // FreeBSD 以及其它操作系统
-                                    // 根本不知道要下什么库
+                                // FreeBSD 以及其它操作系统
                                 case Environments.OSType.FreeBSD | Environments.OSType.Unknown:
                                     throw new NotImplementedException("暂不支持此平台");
                             }
+
+                            if (nativeUrl != null && nativeHash != null && nativePath != null)
+                            {
+                                nativesLib.Add(new Download.FileMetaData()
+                                {
+                                    url = nativeUrl,
+                                    hash = nativeHash,
+                                    algorithm = "sha1",
+                                    path = $"{Version.MinecraftFolder}/libraries/{nativePath}",
+                                    size = nativeSize
+                                });
+                            }
+                        }
+                    }
+                }
+                else // 新版本安装方法
+                {
+                    foreach (var library in VersionJson.libraries)
+                    {
+                        if (library?.downloads.artifact == null) throw new InvalidDataException("Json 结构无效: library 缺少 artifact 信息");
+                        var artifact = library.downloads.artifact;
+
+                        // 排除架构错误的支持库
+                        if (artifact.url.ContainsF("arm") && (Environments.SystemArch != System.Runtime.InteropServices.Architecture.Arm && Environments.SystemArch != System.Runtime.InteropServices.Architecture.Arm64))
+                        {
+                            continue;
                         }
 
+                        // 根据 url 判断支持库适用的操作系统，并添加到 nativesLib 或 commonLib
+                        if ((artifact.url.ContainsF("windows") && Environments.OSType.Windows == Environments.SystemType) ||
+                            (artifact.url.ContainsF("linux") && Environments.OSType.Linux == Environments.SystemType) ||
+                            ((artifact.url.ContainsF("osx") || artifact.url.ContainsF("macos")) && Environments.OSType.MacOS == Environments.SystemType))
+                        {
+                            nativesLib.Add(new Download.FileMetaData()
+                            {
+                                url = artifact.url,
+                                path = $"{Version.MinecraftFolder}/libraries/{artifact.path}",
+                                hash = artifact.sha1,
+                                size = artifact.size,
+                                algorithm = "sha1"
+                            });
+                        }
+                        else // 认为是非特定平台的通用库
+                        {
+                            commonLib.Add(new Download.FileMetaData()
+                            {
+                                url = artifact.url,
+                                path = $"{Version.MinecraftFolder}/libraries/{artifact.path}",
+                                hash = artifact.sha1,
+                                size = artifact.size,
+                                algorithm = "sha1"
+                            });
+                        }
                     }
-                    return Tuple.Create(CommonLib,NativesLib);
                 }
-                // 新版本安装方法
-                foreach (Downloads? library in VersionJson.libraries)
+                commonLib.Select(k =>
                 {
-                    if (library is null) throw new InvalidDataException("Json 结构无效");
-                    var artifact = library.artifact;
-                    // natives 文件
-
-                    // 排除架构错误的支持库
-                    if (artifact.url.ContainsF("arm") && (Environments.SystemArch != System.Runtime.InteropServices.Architecture.Arm || Environments.SystemArch != System.Runtime.InteropServices.Architecture.Arm64)) continue;
-                    // 根据 url 判断支持库适用的操作系统
-                    if (artifact.url.ContainsF("windows") && Environments.OSType.Windows == Environments.SystemType)
-                    {
-                        Download.FileMetaData NativeLib = new()
-                        {
-                            url = artifact.url,
-                            path = $"{Version.MinecraftFolder}/libraries/{artifact.path}",
-                            hash = artifact.sha1,
-                            size = artifact.size,
-                            algorithm = "sha1"
-                        };
-                        NativesLib.Add(NativeLib);
-                    }
-                    else if (artifact.url.ContainsF("linux") && Environments.OSType.Linux == Environments.SystemType)
-                    {
-                        Download.FileMetaData NativeLib = new()
-                        {
-                            url = artifact.url,
-                            path = $"{Version.MinecraftFolder}/libraries/{artifact.path}",
-                            hash = artifact.sha1,
-                            size = artifact.size,
-                            algorithm = "sha1"
-                        };
-                        NativesLib.Add(NativeLib);
-                    }
-                    else if ((artifact.url.ContainsF("osx") || artifact.url.ContainsF("macos")) && Environments.OSType.MacOS == Environments.SystemType)
-                    {
-                        Download.FileMetaData NativeLib = new()
-                        {
-                            url = artifact.url,
-                            path = $"{Version.MinecraftFolder}/libraries/{artifact.path}",
-                            hash = artifact.sha1,
-                            size = artifact.size,
-                            algorithm = "sha1"
-                        };
-                        NativesLib.Add(NativeLib);
-                    }
-                    // 虽然不知道这是什么操作系统不过加了再说
-                    else
-                    {
-                        Download.FileMetaData NativeLib = new()
-                        {
-                            url = artifact.url,
-                            path = $"{Version.MinecraftFolder}/libraries/{artifact.path}",
-                            hash = artifact.sha1,
-                            size = artifact.size,
-                            algorithm = "sha1"
-                        };
-                        NativesLib.Add(NativeLib);
-                    }
-                        CommonLib.Add(new Download.FileMetaData(){
-                        url = artifact.url,
-                        path = $"{Version.MinecraftFolder}/libraries/{artifact.path}",
-                        hash = artifact.sha1,
-                        size = artifact.size,
-                        algorithm = "sha1"
-                    });
-                
-                    }
-                    
-                return Tuple.Create(NativesLib,CommonLib);
+                    Logger.Log(k.url!);
+                    return k;
+                });
+                nativesLib.Select(k =>
+                {
+                    Logger.Log(k.url!);
+                    return k;
+                });
+                return Tuple.Create(nativesLib, commonLib);
             }
             catch (TaskCanceledException)
             {
-                Logger.Log("安装操作已取消");
+                Logger.Log("[Minecraft] 安装操作已取消");
+                throw;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Logger.Log(ex, "获取支持库列表失败");
                 throw;
             }
-            
-                throw new Exception("未知错误");
         }
-        public async static Task<List<Download.FileMetaData>> GetMinecraftAssets(VersionJson VersionJsonFile,McVersion Version,bool CopyToResource) {
-            List<Download.FileMetaData> DownloadList = new();
-            string? VersionAssetsUrl = VersionJsonFile.assetsIndex.url;
-            long VersionAssetsSize = VersionJsonFile.assetsIndex.size;
-            string? VersionAssetsHash = VersionJsonFile.assetsIndex.sha1;
-            string? VersionAssetsIndex = VersionJsonFile.assetsIndex.id;
-            if (VersionAssetsUrl.IsNullOrWhiteSpaceF() || VersionAssetsHash.IsNullOrWhiteSpaceF()) throw new ArgumentException("无效的安装元数据");
-            string Result = await FileIO.ReadAsString((await Network.NetworkRequest(VersionAssetsUrl)));
-            Objects AssetsJson = Json.GetJson<Objects>(Result);
-            var AssetsObject = AssetsJson.objects;
-            if (AssetsObject is not null)
+
+        /// <summary>
+        /// 获取 Minecraft 资源文件下载列表。
+        /// </summary>
+        /// <param name="VersionJsonFile">版本 Json 对象。</param>
+        /// <param name="Version">Minecraft 版本信息。</param>
+        /// <param name="CopyToResource">是否将资源文件复制到旧版本的 resource 文件夹。</param>
+        /// <returns>资源文件元数据列表。</returns>
+        /// <exception cref="ArgumentException">当版本 Json 文件存在问题或无效安装元数据时抛出。</exception>
+        public async static Task<List<Download.FileMetaData>> GetMinecraftAssets(VersionJson VersionJsonFile, McVersion Version, bool CopyToResource)
+        {
+            List<Download.FileMetaData> downloadList = new();
+
+            string? versionAssetsUrl = VersionJsonFile.assetIndex?.url;
+            string? versionAssetsHash = VersionJsonFile.assetIndex?.sha1;
+            
+
+            if (versionAssetsUrl.IsNullOrWhiteSpaceF() || versionAssetsHash.IsNullOrWhiteSpaceF())
             {
-                foreach (var Resource in AssetsObject)
+                throw new ArgumentException("无效的安装元数据：assetsIndex URL 或 Hash 为空。");
+            }
+
+            string result = await FileIO.ReadAsString((await Network.NetworkRequest(versionAssetsUrl)));
+            await FileIO.WriteData(new MemoryStream(Encoding.UTF8.GetBytes(result)), Version.MinecraftFolder + $"/assets/indexes/{VersionJsonFile.assetIndex!.id}.json");
+            Objects? assetsJson = Json.GetJson<Objects>(result);
+            var assetsObject = assetsJson?.objects;
+
+            if (assetsObject is not null)
+            {
+                foreach (var resource in assetsObject)
                 {
-                    string ResHash = Resource.Value.hash;
-                    long size = Resource.Value.size;
-                    DownloadList.Add(new Download.FileMetaData()
+                    string resHash = resource.Value.hash;
+                    long size = resource.Value.size;
+                    downloadList.Add(new Download.FileMetaData()
                     {
-                        url = Source.GetResourceDownloadSource(ResHash),
-                        path = (CopyToResource) ? $"{Version.MinecraftFolder}/resource/{Resource.Key}" : $"{Version.MinecraftFolder}/assets/{ResHash.Substring(0, 2)}/{ResHash}",
-                        hash = ResHash,
+                        url = Source.GetResourceDownloadSource(resHash),
+                        path = (CopyToResource) ? $"{Version.MinecraftFolder}/resource/{resource.Key}" : $"{Version.MinecraftFolder}/assets/objects/{resHash.Substring(0, 2)}/{resHash}",
+                        hash = resHash,
                         algorithm = "sha1",
                         size = size
                     });
                 }
-                return DownloadList;
+                return downloadList;
             }
-            throw new ArgumentException("版本 Json 文件存在问题，无法安装！");
+            throw new ArgumentException("版本 Json 文件存在问题，无法安装资源文件！");
         }
-            
     }
+
     public class Server
     {
         public async static Task DownloadServerCore(string Version)
         {
-            
+
         }
     }
 }

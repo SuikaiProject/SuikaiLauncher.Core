@@ -6,8 +6,5 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Downloader" Version="3.3.4" />
-  </ItemGroup>
 
 </Project>

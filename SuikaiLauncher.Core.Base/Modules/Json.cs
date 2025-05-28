@@ -1,4 +1,4 @@
-#pragma warning disable CS8604
+﻿#pragma warning disable CS8604
 
 using System.Text.Json;
 using System.Text.Json.Nodes;

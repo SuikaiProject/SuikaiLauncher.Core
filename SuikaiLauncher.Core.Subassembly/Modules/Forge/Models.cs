@@ -23,4 +23,15 @@ namespace SuikaiLauncher.Core.Subassembly.Forge.JsonModels
         public required string category;
         public required string hash;
     }
+    public class ForgeInstallProfile
+    {
+        [JsonPropertyName("_comment")]
+        public required string Comment;
+        public bool? hideExtract;
+        public int? spec;
+        public string? profile;
+        public required string version;
+        public required string path;
+        public required string minecraft;
+    }
 }
