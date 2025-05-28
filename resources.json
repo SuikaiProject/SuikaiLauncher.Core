@@ -1,0 +1,126 @@
+{
+    "java":{
+        "windows":{
+            "x86":{
+                "java-8":[
+                    {
+                        "name":"Azul OpenJDK",
+                        "sha256":"",
+                        "url":"",
+                        "size":0
+                    },
+                    {
+                        "name":"Adoptium OpenJDK",
+                        "sha256":"",
+                        "url":"",
+                        "size":0
+                    },
+                    {
+                        "name":"Alibaba OpenJDK",
+                        "sha256":"",
+                        "url":"",
+                        "size":0
+                    }
+                ],
+                "java-17":[
+                    {
+                        "name":"Azul OpenJDK",
+                        "sha256":"",
+                        "url":"",
+                        "size":0
+                    },
+                    {
+                        "name":"Adoptium OpenJDK",
+                        "sha256":"",
+                        "url":"",
+                        "size":0
+                    },
+                    {
+                        "name":"Alibaba OpenJDK",
+                        "sha256":"",
+                        "url":"",
+                        "size":0
+                    }
+                ],
+                "java-21":[]
+            },
+            "x64":{
+                "java-8":[
+                    {
+                        "name":"Azul OpenJDK",
+                        "sha256":"",
+                        "url":"",
+                        "size":0
+                    },
+                    {
+                        "name":"Adoptium OpenJDK",
+                        "sha256":"",
+                        "url":"",
+                        "size":0
+                    },
+                    {
+                        "name":"Alibaba OpenJDK",
+                        "sha256":"",
+                        "url":"",
+                        "size":0
+                    }
+                ],
+                "java-17":[
+                    {
+                        "name":"Azul OpenJDK",
+                        "sha256":"",
+                        "url":"",
+                        "size":0
+                    },
+                    {
+                        "name":"Adoptium OpenJDK",
+                        "sha256":"",
+                        "url":"",
+                        "size":0
+                    },
+                    {
+                        "name":"Alibaba OpenJDK",
+                        "sha256":"",
+                        "url":"",
+                        "size":0
+                    }
+                ],
+                "java-21":[
+                    {
+                        "name":"Azul OpenJDK",
+                        "sha256":"",
+                        "url":"",
+                        "size":0
+                    },
+                    {
+                        "name":"Adoptium OpenJDK",
+                        "sha256":"",
+                        "url":"",
+                        "size":0
+                    },
+                    {
+                        "name":"Alibaba OpenJDK",
+                        "sha256":"",
+                        "url":"",
+                        "size":0
+                    }
+                ]
+            }
+        }
+    },
+    ".NET Runtime":{
+        "8":{
+            "windows":{
+                "x86":{
+
+                },
+                "x64":{
+
+                },
+                "arm64":{
+
+                }
+            }
+        }
+    }
+}
