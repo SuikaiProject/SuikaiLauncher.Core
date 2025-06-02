@@ -1,9 +1,140 @@
 ﻿#pragma warning disable SYSLIB0014
 using SuikaiLauncher.Core.Override;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
+using System.Net.Security;
 
 namespace SuikaiLauncher.Core.Base
 {
+    public class HttpRequestBuilder
+    {
+        public class SslInfomation
+        {
+            public required object RequestMessage;
+            public required X509Certificate? Cert;
+            public required X509Chain? Chain;
+            public required SslPolicyErrors SslPolicyError;
+        }
+        private string? _RequestUri;
+        private static readonly HttpProxy RequestProxyFactory = new();
+        private string? ConnectAddress;
+        private int ConnectPort = 0;
+        private static readonly HttpClient Client = new();
+        private bool CheckSsl = true;
+        public static readonly object HttpRequestBuilderPropertyChangeLock = new object[1];
+        private static Func<SslInfomation, bool>? CustomSslValidateCallback;
+        private static readonly SocketsHttpHandler Handler = new()
+        {
+            UseProxy = true,
+            Proxy = RequestProxyFactory,
+            AllowAutoRedirect = false,
+            SslOptions = new SslClientAuthenticationOptions()
+            {
+                RemoteCertificateValidationCallback = (object httpRequestMessage,X509Certificate? cert,X509Chain? certChain,SslPolicyErrors sslPolicyError) =>
+                {
+                    if (CustomSslValidateCallback is not null)
+                    {
+                        return CustomSslValidateCallback(new SslInfomation()
+                        {
+                            RequestMessage = httpRequestMessage,
+                            Cert = cert,
+                            Chain = certChain,
+                            SslPolicyError = sslPolicyError
+                        });
+                    }
+                    if (sslPolicyError != SslPolicyErrors.None && CheckSsl)
+                    {
+                        return false;
+                    }
+                    return true;
+                }
+            }
+        };
+        public required string RequestUri
+        {
+            get {
+                if (_RequestUri.IsNullOrWhiteSpaceF()) return string.Empty;
+                return _RequestUri;
+            }
+            set {
+                _RequestUri = value;
+            }
+        }
+        /// <summary>
+        /// 创建 HttpRequestBuilder 的新实例
+        /// </summary>
+        /// <param name="url">目标服务器地址</param>
+        /// <returns>HttpRequestBuilder</returns>
+        public static HttpRequestBuilder Create(string url)
+        {
+            return new HttpRequestBuilder() { RequestUri = url };
+        }
+        /// <summary>
+        /// 设置默认证书验证函数
+        /// </summary>
+        /// <param name="CustomCallback">证书验证函数</param>
+        public static void SetCustomSslValidateCallback(Func<SslInfomation, bool> CustomCallback)
+        {
+            lock (HttpRequestBuilderPropertyChangeLock)
+            {
+                CustomSslValidateCallback = CustomCallback;
+            }
+        }
+        /// <summary>
+        /// 设置请求的 IP 地址，用于覆盖默认查询结果
+        /// </summary>
+        /// <param name="Address">IP 地址</param>
+        /// <returns>HttpRequestBuilder</returns>
+        public HttpRequestBuilder SetSourceAddress(string Address)
+        {
+            return this;
+        }
+        /// <summary>
+        /// 设置请求端口，用于覆盖默认端口
+        /// </summary>
+        /// <param name="Port">端口号</param>
+        /// <returns>HttpRequestBuilder</returns>
+        public HttpRequestBuilder SetConnectPort(int Port)
+        {
+            return this
+        }
+        /// <summary>
+        /// 是否在默认验证逻辑中忽略 SSL 证书错误
+        /// </summary>
+        /// <returns>HttpRequestBuilder</returns>
+        public HttpRequestBuilder IgnoreSslError()
+        {
+            lock (HttpRequestBuilderPropertyChangeLock)
+            {
+                CheckSsl = true;
+            }
+            return this;
+        }
+        /// <summary>
+        /// 设置请求使用的代理
+        /// </summary>
+        /// <param name="Proxy">代理服务器</param>
+        /// <returns>HttpRequestBuilder</returns>
+        public HttpRequestBuilder UseProxy(string? Proxy = null)
+        {
+            if (!Proxy.IsNullOrWhiteSpaceF()) {
+                lock (RequestProxyFactory.ProxyChangeLock) {
+                    RequestProxyFactory.ProxyAddress = Proxy;
+                    RequestProxyFactory.RequiredReloadProxyServer = true;
+                   }
+                }
+            return this;
+
+        }
+        public HttpRequestBuilder SetHeader() 
+        {
+            return this;
+        }
+        public HttpRequestBuilder SetHanders()
+        {
+            return this;
+        }
+    }
     
     public class HttpProxy : IWebProxy
     {
@@ -74,14 +205,7 @@ namespace SuikaiLauncher.Core.Base
         private static readonly HttpClientHandler clientHandler = new HttpClientHandler()
         {
             AllowAutoRedirect = SetupServicePoint(),
-            ServerCertificateCustomValidationCallback = (httpRequestMessage, cert, certChain, sslPolicyError) =>
-            {
-                if (sslPolicyError != System.Net.Security.SslPolicyErrors.None && !IgnoreSslError)
-                {
-                    return false;
-                }
-                return true;
-            },
+            ServerCertificateCustomValidationCallback = ,
             UseProxy = true,
             Proxy = Proxy,
             AutomaticDecompression = DecompressionMethods.All
