@@ -72,5 +72,17 @@ namespace SuikaiLauncher.Core.Override
             }
             return true;
         }
+        public static Uri ToURI(this string content)
+        {
+                return new Uri(content);
+        }
+        public static byte[] GetBytes(this string content,Encoding? encoding = null)
+        {
+            return (encoding ?? Encoding.UTF8).GetBytes(content);
+        }
+        public static string GetString(this byte[] content, Encoding? encoding = null)
+        {
+            return (encoding ?? Encoding.UTF8).GetString(content);
+        }
     }
 }

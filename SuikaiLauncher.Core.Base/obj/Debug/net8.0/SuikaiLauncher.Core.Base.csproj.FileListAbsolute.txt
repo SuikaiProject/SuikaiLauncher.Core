@@ -1,0 +1,5 @@
+D:\project\SuikaiLauncher.Core\SuikaiLauncher.Core.Base\obj\Debug\net8.0\SuikaiLauncher.Core.Base.GeneratedMSBuildEditorConfig.editorconfig
+D:\project\SuikaiLauncher.Core\SuikaiLauncher.Core.Base\obj\Debug\net8.0\SuikaiLauncher.Core.Base.AssemblyInfoInputs.cache
+D:\project\SuikaiLauncher.Core\SuikaiLauncher.Core.Base\obj\Debug\net8.0\SuikaiLauncher.Core.Base.AssemblyInfo.cs
+D:\project\SuikaiLauncher.Core\SuikaiLauncher.Core.Base\obj\Debug\net8.0\SuikaiLauncher.Core.Base.csproj.CoreCompileInputs.cache
+D:\project\SuikaiLauncher.Core\SuikaiLauncher.Core.Base\obj\Debug\net8.0\SuikaiLauncher.Core.Base.sourcelink.json

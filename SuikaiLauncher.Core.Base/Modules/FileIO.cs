@@ -103,7 +103,7 @@ namespace SuikaiLauncher.Core.Base
                 return await ReadBytes(fileStream);
             }
         }
-        public static 
+       
 
         public static async Task<string> GetFileHashAsync(string filePath, string algorithm = "sha1")
         {
@@ -128,4 +128,10 @@ namespace SuikaiLauncher.Core.Base
             };
         }
     }
+    public class ArchiveFile:IDisposable{
+        public bool disposed;
+        public void Dispose()
+        {
+
+        }
 }
