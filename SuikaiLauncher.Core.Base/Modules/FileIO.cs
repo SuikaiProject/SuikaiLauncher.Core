@@ -2,6 +2,9 @@ using System.Text;
 using System.Security.Cryptography;
 using SuikaiLauncher.Core.Override;
 using System.Net;
+using System.Linq.Expressions;
+using System.IO.Compression;
+using System.Formats.Tar;
 
 namespace SuikaiLauncher.Core.Base
 {
@@ -103,7 +106,7 @@ namespace SuikaiLauncher.Core.Base
                 return await ReadBytes(fileStream);
             }
         }
-        public static 
+       
 
         public static async Task<string> GetFileHashAsync(string filePath, string algorithm = "sha1")
         {
@@ -127,5 +130,77 @@ namespace SuikaiLauncher.Core.Base
                 _ => throw new ArgumentException($"不支持的哈希算法: {algorithm}")
             };
         }
+    }
+    /// <summary>
+    /// 可以用 Using 的压缩文件管理器
+    /// </summary>
+    public class ArchiveFile : IDisposable
+    {
+        private bool _dispose;
+        private string FilePath;
+        private object? Handler;
+        public bool disposed
+        {
+            get { return _dispose; }
+            set { throw new InvalidOperationException("不能为 disposed 属性赋值"); }
+        }
+        private readonly object ChangeLock = new object[1];
+        ~ArchiveFile()
+        {
+            Dispose();
+        }
+
+        public void Dispose()
+        {
+            lock (ChangeLock)
+            {
+                _dispose = true;
+            }
+            GC.SuppressFinalize(this);
+        }
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="FilePath"></param>
+        /// <exception cref="FileNotFoundException"></exception>
+        public ArchiveFile(string FilePath)
+        {
+            if (!File.Exists(FilePath)) throw new FileNotFoundException("未找到指定文件");
+            using (FileStream FileReadStream = new(FilePath,FileMode.Open,FileAccess.Read,FileShare.Read,8192,true)) {
+                byte[] FileHeaders = new byte[8];
+                // 读取文件的前 8 个字节
+                FileReadStream.Read(FileHeaders,0,8);
+                // zip，但是空文件
+                if (FileHeaders[0] == 0x50 && FileHeaders[1] == 0x4b && FileHeaders[2] == 0x05 && FileHeaders[4] == 0x06) throw new InvalidDataException("此 ZIP 文件为空");
+                // zip
+                else if (FileHeaders[0] == 0x50 && FileHeaders[1] == 0x4b) Handler = new ZipArchive(FileReadStream);
+                // tar + gzip
+                // 0x1f && 0x8b Gzip 头
+                else if (FilePath.EndsWith(".tar.gz") || FilePath.EndsWith(".tgz"))
+                {
+                    Handler = new TarReader(new GZipStream(FileReadStream, CompressionLevel.Fastest));
+                }
+                // gzip only
+                else if (Path.GetExtension(FilePath).ContainsF(".gz")) Handler = new GZipStream(FileReadStream, CompressionLevel.Fastest);
+            }
+        }
+        public Stream GetFileReadStream(string ArchiveEntry)
+        {
+            return new MemoryStream();
+        }
+        public Stream GetFileWriteStream(string ArchiveEntry)
+        {
+            return new MemoryStream();
+        }
+        public async void Expand(DirectoryInfo Folder)
+        {
+            if (!Folder.Exists) Folder.Create();
+
+        }
+        public async Task Write(string EntryName,Stream DataStream)
+        {
+            Stream EntryStream = this.GetFileWriteStream(EntryName);
+        } 
     }
 }
