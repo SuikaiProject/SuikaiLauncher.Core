@@ -10,10 +10,11 @@ namespace SuikaiLauncher.Core.Base
     public class ProcessBuilder
     {
         private Action<TaskCanceledException>? CrashCallback;
-        private Action? ExitCallback;
+        private Action<TaskCanceledException>? ExitCallback;
         private CancellationTokenSource CTS = new();
         private List<string?> Arguments = [];
-        private FileStream OutputStream = new(Environments.ApplicationDataPath + "SuikaiLauncher/Core/ProcessBuilder/Logs/" + DateTime.Now.ToString("yyyy-MM-dd") + ".log", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read, 8192, true);
+        private static readonly string LogPath = Environments.ApplicationDataPath + "SuikaiLauncher/Core/ProcessBuilder/Logs/" + DateTime.Now.ToString("yyyy-MM-dd") + ".log"
+        private FileStream OutputStream = new(LogPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read, 8192, true);
         private Process process = new();
         private MemoryStream buffer = new();
         private readonly object StreamLock = new object[1];
@@ -61,13 +62,12 @@ namespace SuikaiLauncher.Core.Base
             {
                 while (!process.HasExited)
                 {
-                    
                     await Task.Delay(TimeSpan.FromSeconds(10));
                     lock (StreamLock)
                     {
                         Task.Run(async () =>
                         {
-
+                            await this.buffer.CopyToAsync(this.OutputStream);
                         });
                     }
                     await this.OutputStream.FlushAsync();
@@ -76,7 +76,7 @@ namespace SuikaiLauncher.Core.Base
                     if (CTS.Token.IsCancellationRequested) throw new TaskCanceledException("进程监控已退出");
                 }
                 TaskCanceledException TaskEX = new();
-                TaskEX.Data["RawOutput"] = null;
+                TaskEX.Data["RawOutput"] = LogPath;
                 if (process.ExitCode != 0 && this.CrashCallback is not null) this.CrashCallback(TaskEX);
                 else if(this.ExitCallback is not null) this.ExitCallback();
             });

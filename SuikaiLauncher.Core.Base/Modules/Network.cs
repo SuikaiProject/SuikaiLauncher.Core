@@ -518,7 +518,23 @@ namespace SuikaiLauncher.Core.Base
             return CurrentProxy?.GetProxy(RequestUri) == RequestUri;
         }
     }
-
+    
+    public class FileMetaData
+    {
+        public string? path { get; set; }
+        public string? hash { get; set; }
+        public string? algorithm { get; set; }
+        public long? size { get; set; }
+        public string? url { get; set; }
+        public long Start;
+        public bool ValidatePathContains(string path)
+        {
+            if (this.path.IsNullOrWhiteSpaceF() || path.IsNullOrWhiteSpaceF()) return false;
+            return Path.GetFullPath(this.path).StartsWith(path);
+        }
+    }
+    
+    /*
     public class Download
     {
         internal static SemaphoreSlim MaxDownloadThread = new SemaphoreSlim(64);
@@ -538,20 +554,7 @@ namespace SuikaiLauncher.Core.Base
         public static WebProxy? ProxyServer = null;
         public static bool ParallelDownload = true;
 
-        public class FileMetaData
-        {
-            public string? path { get; set; }
-            public string? hash { get; set; }
-            public string? algorithm { get; set; }
-            public long? size { get; set; }
-            public string? url { get; set; }
-            public long Start;
-            public bool ValidatePathContains(string path)
-            {
-                if (this.path.IsNullOrWhiteSpaceF() || path.IsNullOrWhiteSpaceF()) return false;
-                return Path.GetFullPath(this.path).StartsWith(path);
-            }
-        }
+        
 
         public static readonly object FileListLock = new object[1];
         public static long TotalFileCount = 0;
@@ -599,4 +602,5 @@ namespace SuikaiLauncher.Core.Base
             await Task.WhenAll(tasks);
         }
     }
+    */
 }
