@@ -4,6 +4,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Company>SuikaiProject</Company>
+    <Product>SuikaiLauncher.Core</Product>
   </PropertyGroup>
 
   <ItemGroup>

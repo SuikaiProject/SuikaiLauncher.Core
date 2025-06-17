@@ -1,10 +1,10 @@
-﻿using SuikaiLauncher.Core.Account.JsonModel;
+using SuikaiLauncher.Core.Account.JsonModel;
 using SuikaiLauncher.Core.Base;
 using SuikaiLauncher.Core.Override;
 using System.Runtime.CompilerServices;
 
 
-namespace SuikaiLauncher.Core.Account.Modules
+namespace SuikaiLauncher.Core.Account
 {
     public class Microsoft
     {

@@ -7,6 +7,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq.Expressions;
 using System.Net;
+using System.Formats.Tar;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -217,6 +218,7 @@ namespace SuikaiLauncher.Core.Base
     {
         private bool _dispose;
         private string FilePath;
+
         private dynamic? Handler;
         private GZipStream? DataStream;
         public bool disposed
@@ -316,6 +318,5 @@ namespace SuikaiLauncher.Core.Base
                 }
             }
         }
-        
     }
 }
