@@ -1,13 +1,84 @@
-using System.Text;
-using System.Security.Cryptography;
 using SuikaiLauncher.Core.Override;
-using System.Net;
-using System.Linq.Expressions;
-using System.IO.Compression;
+using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Formats.Asn1;
 using System.Formats.Tar;
+using System.IO;
+using System.IO.Compression;
+using System.Linq.Expressions;
+using System.Net;
+using System.Formats.Tar;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace SuikaiLauncher.Core.Base
 {
+
+    public class Murmur2 : HashAlgorithm
+    {
+        public int seed = 1;
+        const uint m = 0x5bd1e995;
+        const int r = 24;
+        private uint Result;
+        public override void Initialize()
+        {
+            return;
+        }
+
+        protected override void HashCore(byte[] array, int ibStart, int cbSize)
+        {
+            return;
+        }
+
+        protected override byte[] HashFinal()
+        {
+            return new byte[1];
+        }
+        public Murmur2 ComputeHash(Stream FileReadStream)
+        {
+            long length = FileReadStream.Length;
+            uint h = (uint)(seed ^ uint.Parse(length.ToString()));
+
+            byte[] buffer = new byte[4];
+            int read;
+            while ((read = FileReadStream.Read(buffer, 0, 4)) == 4)
+            {
+                uint k = BitConverter.ToUInt32(buffer, 0);
+
+                k *= m;
+                k ^= k >> r;
+                k *= m;
+
+                h *= m;
+                h ^= k;
+            }
+            // Handle the last few bytes of the input array
+            switch (length & 3)
+            {
+                case 3:
+                    h ^= (uint)(buffer[2] << 16);
+                    goto case 2;
+                case 2:
+                    h ^= (uint)(buffer[1] << 8);
+                    goto case 1;
+                case 1:
+                    h ^= buffer[0];
+                    h *= m;
+                    break;
+            }
+
+            h ^= h >> 13;
+            h *= m;
+            h ^= h >> 15;
+
+            this.Result = h;
+            return this;
+        }
+        public uint GetResult()
+        {
+            return this.Result;
+        }
+    }
     public class FileIO
     {
         public static async Task<string> ReadAsString(Stream dataStream)
@@ -86,6 +157,10 @@ namespace SuikaiLauncher.Core.Base
         public static string GetDataHash(string data, string algorithm = "sha1")
         {
             using var hasher = CreateHashAlgorithm(algorithm);
+            if (hasher is Murmur2)
+            {
+                
+            }
             var bytes = Encoding.UTF8.GetBytes(data);
             var hash = hasher.ComputeHash(bytes);
             return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
@@ -112,9 +187,14 @@ namespace SuikaiLauncher.Core.Base
         {
             if (!File.Exists(filePath))
                 throw new FileNotFoundException("找不到指定的文件", filePath);
-
+            
             using var hasher = CreateHashAlgorithm(algorithm);
+            
             await using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, useAsync: true);
+            if (hasher is Murmur2)
+            {
+                ((Murmur2)hasher).ComputeHash(stream).GetResult();
+            }
             var hash = await Task.Run(() => hasher.ComputeHash(stream));
             return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
         }
@@ -138,7 +218,9 @@ namespace SuikaiLauncher.Core.Base
     {
         private bool _dispose;
         private string FilePath;
-        private object? Handler;
+
+        private dynamic? Handler;
+        private GZipStream? DataStream;
         public bool disposed
         {
             get { return _dispose; }
@@ -171,36 +253,70 @@ namespace SuikaiLauncher.Core.Base
                 byte[] FileHeaders = new byte[8];
                 // 读取文件的前 8 个字节
                 FileReadStream.Read(FileHeaders,0,8);
+                // 将文件流指针移动到开头避免因为缺失文件头导致解压失败
+                FileReadStream.Seek(0, SeekOrigin.Begin);
                 // zip，但是空文件
                 if (FileHeaders[0] == 0x50 && FileHeaders[1] == 0x4b && FileHeaders[2] == 0x05 && FileHeaders[4] == 0x06) throw new InvalidDataException("此 ZIP 文件为空");
                 // zip
                 else if (FileHeaders[0] == 0x50 && FileHeaders[1] == 0x4b) Handler = new ZipArchive(FileReadStream);
-                // tar + gzip
-                // 0x1f && 0x8b Gzip 头
-                else if (FilePath.EndsWith(".tar.gz") || FilePath.EndsWith(".tgz"))
+                // gzip
+                else if (FileHeaders[0] == 0x1f && FileHeaders[1] == 0x8b)
                 {
-                    Handler = new TarReader(new GZipStream(FileReadStream, CompressionLevel.Fastest));
+                    GZipStream Gzip = new(FileReadStream, CompressionLevel.Fastest);
+                    try {
+                        // 验证是否是 tar.gz
+                        Handler = new TarReader(Gzip);
+                    }
+                    catch
+                    {
+                        throw new NotSupportedException("不支持此压缩文件格式");
+                    }
                 }
-                // gzip only
-                else if (Path.GetExtension(FilePath).ContainsF(".gz")) Handler = new GZipStream(FileReadStream, CompressionLevel.Fastest);
+                
             }
         }
-        public Stream GetFileReadStream(string ArchiveEntry)
+        public async Task ReadFile(string ArchiveEntry,Stream OutputStream)
         {
-            return new MemoryStream();
-        }
-        public Stream GetFileWriteStream(string ArchiveEntry)
-        {
-            return new MemoryStream();
-        }
-        public async void Expand(DirectoryInfo Folder)
-        {
-            if (!Folder.Exists) Folder.Create();
+            if (this.Handler is not null && this.Handler is ZipArchive)
+            {
+                using (Stream? ReadStream = ((ZipArchive)this.Handler).GetEntry(ArchiveEntry)?.Open()) 
+                {
+                    if (ReadStream is null) return;
+                    await ReadStream.CopyToAsync(OutputStream);
+                }
+            }
+            else if (this.Handler is not null && this.Handler is TarReader)
+            {
+                while (true)
+                {
+                    TarEntry? Entry = await ((TarReader)this.Handler).GetNextEntryAsync();
+                    if (Entry is null) break;
+                    if (Entry.Name == ArchiveEntry && Entry.DataStream is not null) await Entry.DataStream.CopyToAsync(OutputStream);
+                }
+            }
+            
 
         }
-        public async Task Write(string EntryName,Stream DataStream)
+        public async Task WriteFile(string ArchiveEntry,Stream FileReadStream)
         {
-            Stream EntryStream = this.GetFileWriteStream(EntryName);
-        } 
+            if(this.Handler is not null && this.Handler is ZipArchive)
+            {
+                using(Stream WriteStream = ((ZipArchive)this.Handler).CreateEntry(ArchiveEntry).Open())
+                {
+                    await FileReadStream.CopyToAsync(WriteStream);
+                }
+            }
+            else
+            {
+                if (DataStream is null) throw new InvalidOperationException("此流不可写，因为其实参为 null");
+                using (TarWriter Writer = new TarWriter(this.DataStream!))
+                {
+                    UstarTarEntry Entry = new(TarEntryType.RegularFile, ArchiveEntry);
+                    Entry.DataStream = new MemoryStream();
+                    await FileReadStream.CopyToAsync(Entry.DataStream);
+                    Writer.WriteEntry(Entry);
+                }
+            }
+        }
     }
 }

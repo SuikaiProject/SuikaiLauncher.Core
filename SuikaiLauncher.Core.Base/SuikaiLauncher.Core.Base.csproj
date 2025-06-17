@@ -8,5 +8,9 @@
     <Product>SuikaiLauncher.Core</Product>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Folder Include="新文件夹\" />
+  </ItemGroup>
+
 
 </Project>

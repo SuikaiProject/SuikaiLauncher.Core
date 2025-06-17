@@ -1,4 +1,4 @@
-﻿#pragma warning disable SYSLIB0014
+#pragma warning disable SYSLIB0014
 using SuikaiLauncher.Core.Base;
 using System.Net;
 using System.Net.Security;
@@ -7,6 +7,7 @@ using System.Security.Cryptography.X509Certificates;
 using SuikaiLauncher.Core.Override;
 using System.Net.NetworkInformation;
 using System.Runtime.CompilerServices;
+using System.Reflection.Metadata;
 
 // 这里是一堆和网络有关系的工具，包括网络请求，代理，Ping，域名解析
 // 虽然看起来很乱然而我没空整理，就先这样吧（逃
@@ -100,7 +101,7 @@ namespace SuikaiLauncher.Core.Base
                         }
                     }
                 }
-
+                
                 // 新建连接
                 var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)
                 {
@@ -118,7 +119,8 @@ namespace SuikaiLauncher.Core.Base
             }
         };
         private static readonly HttpClient Client = new(SocketHandler);
-
+        private static bool FirstRequest;
+        public static string UserAgent = "SuikaiLauncher.Core/0.0.1";
         /// <summary>
         /// 创建 HttpRequestBuilder 的新实例
         /// </summary>
@@ -188,6 +190,11 @@ namespace SuikaiLauncher.Core.Base
             return this;
 
         }
+        public HttpRequestBuilder WithRequestData(MemoryStream Data)
+        {
+            this.Req.Content = new ByteArrayContent(Data.ToArray());
+            return this;
+        }
         /// <summary>
         /// 设置标头
         /// </summary>
@@ -213,8 +220,10 @@ namespace SuikaiLauncher.Core.Base
         /// 获取响应
         /// </summary>
         /// <returns>HttpResponseMessage</returns>
-        public HttpResponseMessage? GetResponse()
+        public HttpResponseMessage GetResponse(bool EnsureSuccessStatusCode = true)
         {
+            if (this.Resp is null) throw new InvalidOperationException("尝试在服务器响应之前获取响应对象");
+            if (EnsureSuccessStatusCode) this.Resp.EnsureSuccessStatusCode();
             return this.Resp;
         }
         /// <summary>
@@ -518,23 +527,7 @@ namespace SuikaiLauncher.Core.Base
             return CurrentProxy?.GetProxy(RequestUri) == RequestUri;
         }
     }
-    
-    public class FileMetaData
-    {
-        public string? path { get; set; }
-        public string? hash { get; set; }
-        public string? algorithm { get; set; }
-        public long? size { get; set; }
-        public string? url { get; set; }
-        public long Start;
-        public bool ValidatePathContains(string path)
-        {
-            if (this.path.IsNullOrWhiteSpaceF() || path.IsNullOrWhiteSpaceF()) return false;
-            return Path.GetFullPath(this.path).StartsWith(path);
-        }
-    }
-    
-    /*
+
     public class Download
     {
         internal static SemaphoreSlim MaxDownloadThread = new SemaphoreSlim(64);
@@ -554,7 +547,20 @@ namespace SuikaiLauncher.Core.Base
         public static WebProxy? ProxyServer = null;
         public static bool ParallelDownload = true;
 
-        
+        public class FileMetaData
+        {
+            public string? path { get; set; }
+            public string? hash { get; set; }
+            public string? algorithm { get; set; }
+            public long? size { get; set; }
+            public string? url { get; set; }
+            public long Start;
+            public bool ValidatePathContains(string path)
+            {
+                if (this.path.IsNullOrWhiteSpaceF() || path.IsNullOrWhiteSpaceF()) return false;
+                return Path.GetFullPath(this.path).StartsWith(path);
+            }
+        }
 
         public static readonly object FileListLock = new object[1];
         public static long TotalFileCount = 0;
@@ -602,5 +608,4 @@ namespace SuikaiLauncher.Core.Base
             await Task.WhenAll(tasks);
         }
     }
-    */
 }

@@ -1,4 +1,4 @@
-﻿using SuikaiLauncher.Core.Override;
+using SuikaiLauncher.Core.Override;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -10,11 +10,10 @@ namespace SuikaiLauncher.Core.Base
     public class ProcessBuilder
     {
         private Action<TaskCanceledException>? CrashCallback;
-        private Action<TaskCanceledException>? ExitCallback;
+        private Action? ExitCallback;
         private CancellationTokenSource CTS = new();
         private List<string?> Arguments = [];
-        private static readonly string LogPath = Environments.ApplicationDataPath + "SuikaiLauncher/Core/ProcessBuilder/Logs/" + DateTime.Now.ToString("yyyy-MM-dd") + ".log"
-        private FileStream OutputStream = new(LogPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read, 8192, true);
+        private FileStream OutputStream = new(Environments.ApplicationDataPath + "SuikaiLauncher/Core/ProcessBuilder/Logs/" + DateTime.Now.ToString("yyyy-MM-dd") + ".log", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read, 8192, true);
         private Process process = new();
         private MemoryStream buffer = new();
         private readonly object StreamLock = new object[1];
@@ -65,10 +64,9 @@ namespace SuikaiLauncher.Core.Base
                     await Task.Delay(TimeSpan.FromSeconds(10));
                     lock (StreamLock)
                     {
-                        Task.Run(async () =>
-                        {
-                            await this.buffer.CopyToAsync(this.OutputStream);
-                        });
+                        
+                        this.buffer.CopyToAsync(this.OutputStream);
+                        
                     }
                     await this.OutputStream.FlushAsync();
                     // 清空 Buffer 防止内存爆炸
@@ -76,7 +74,7 @@ namespace SuikaiLauncher.Core.Base
                     if (CTS.Token.IsCancellationRequested) throw new TaskCanceledException("进程监控已退出");
                 }
                 TaskCanceledException TaskEX = new();
-                TaskEX.Data["RawOutput"] = LogPath;
+                TaskEX.Data["RawOutput"] = null;
                 if (process.ExitCode != 0 && this.CrashCallback is not null) this.CrashCallback(TaskEX);
                 else if(this.ExitCallback is not null) this.ExitCallback();
             });
@@ -86,9 +84,17 @@ namespace SuikaiLauncher.Core.Base
         {
             this.CrashCallback = Callback;
         }
-        public void SetCustomProcessExitCallback(Action<TaskCanceledException> Callback)
+        public void SetCustomProcessExitCallback(Action Callback)
         {
             this.ExitCallback = Callback;
+        }
+        public async Task StopProcess()
+        {
+            if (this.process.HasExited) return;
+            if (this.process.MainWindowTitle.IsNullOrWhiteSpaceF()) this.process.Kill();
+            this.process.CloseMainWindow();
+            this.process.WaitForExit(5000);
+            if (!this.process.HasExited) this.process.Kill();
         }
     }
 }
