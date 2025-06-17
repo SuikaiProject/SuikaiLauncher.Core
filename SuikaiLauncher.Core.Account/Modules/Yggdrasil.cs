@@ -65,7 +65,7 @@ namespace SuikaiLauncher.Core.Account{
             );
             var UserAuthData = await FileIO.ReadAsString(UserAuthResult);
             if (!UserAuthResult.IsSuccessStatusCode){
-                YggdrasilAuthError Result = Json.GetJson<YggdrasilAuthError>(UserAuthData);
+                YggdrasilAuthError Result = Json.Deserialize<YggdrasilAuthError>(UserAuthData);
                 Logger.Log($"[Account] 第三方登录失败：远程服务器返回错误：{UserAuthResult.StatusCode}");
                 List<string> ErrorReason = new ();
                 try

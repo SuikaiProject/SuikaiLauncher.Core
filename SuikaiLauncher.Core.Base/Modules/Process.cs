@@ -61,14 +61,12 @@ namespace SuikaiLauncher.Core.Base
             {
                 while (!process.HasExited)
                 {
-                    
                     await Task.Delay(TimeSpan.FromSeconds(10));
                     lock (StreamLock)
                     {
-                        Task.Run(async () =>
-                        {
-
-                        });
+                        
+                        this.buffer.CopyToAsync(this.OutputStream);
+                        
                     }
                     await this.OutputStream.FlushAsync();
                     // 清空 Buffer 防止内存爆炸
@@ -86,9 +84,17 @@ namespace SuikaiLauncher.Core.Base
         {
             this.CrashCallback = Callback;
         }
-        public void SetCustomProcessExitCallback(Action<TaskCanceledException> Callback)
+        public void SetCustomProcessExitCallback(Action Callback)
         {
             this.ExitCallback = Callback;
+        }
+        public async Task StopProcess()
+        {
+            if (this.process.HasExited) return;
+            if (this.process.MainWindowTitle.IsNullOrWhiteSpaceF()) this.process.Kill();
+            this.process.CloseMainWindow();
+            this.process.WaitForExit(5000);
+            if (!this.process.HasExited) this.process.Kill();
         }
     }
 }
